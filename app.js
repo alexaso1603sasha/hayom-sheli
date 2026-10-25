@@ -1,3 +1,7 @@
+// כתובת השרת של ההתראות (Cloudflare Worker). משאירים ריק עד שהשרת מוכן.
+// דוגמה: const API_BASE = 'https://hayom-sheli-push.YOURNAME.workers.dev';
+const API_BASE = 'https://hayom-sheli-push.alexaso1603.workers.dev';
+
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const days = ['יום א׳','יום ב׳','יום ג׳','יום ד׳','יום ה׳','יום ו׳','שבת'];
@@ -18,7 +22,7 @@ const defaultGroups = [{id:'personal',name:'אישי',color:'#6d5bd0'},{id:'meet
 let tasks = JSON.parse(localStorage.getItem('hayom-sheli-tasks') || 'null') || sample;
 let groups = JSON.parse(localStorage.getItem('hayom-sheli-groups') || 'null') || defaultGroups;
 
-function save(){localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));scheduleReminders();}
+function save(){localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));localStorage.setItem('hayom-sheli-updated',String(Date.now()));scheduleReminders();queueSync();}
 function taskOnDate(task,date){return task.type==='dated'?task.date===iso(date):task.type==='recurring'&&task.days.includes(date.getDay());}
 function doneOn(task,date){return !!task.done?.[iso(date)];}
 function setDone(task,date,value){task.done ||= {};task.done[iso(date)]=value;save();render();}
@@ -41,11 +45,74 @@ function openDialog(type,task=null){modalType=type;editingTaskId=task?.id||null;
 function saveTask(){const title=$('#task-title-input').value.trim();if(!title)return;const existing=tasks.find(t=>t.id===editingTaskId),task=existing||{id:crypto.randomUUID(),done:{}};Object.assign(task,{title,type:modalType,time:selectedTime(),reminder:$('#reminder-input').value,group:$('#group-input').value});delete task.date;delete task.days;if(modalType==='dated')task.date=iso(dialogDate);if(modalType==='recurring'){task.days=$$('#repeat-days input:checked').map(i=>Number(i.value));if(!task.days.length){showToast('בחרי לפחות יום אחד');return;}}if(!existing)tasks.push(task);save();render();$('#task-dialog').close();showToast(existing?'המשימה עודכנה':'המשימה נשמרה');}
 function switchDrawer(view){$$('.drawer-section').forEach(button=>button.classList.toggle('active',button.dataset.drawerView===view));$$('.drawer-page').forEach(page=>page.classList.toggle('active',page.id===`${view}-drawer`));}
 function toggleDrawer(open){$('#action-drawer').classList.toggle('open',open);$('#drawer-overlay').classList.toggle('open',open);}
-async function enableNotifications(){if(!('Notification'in window)){showToast('הדפדפן הזה לא תומך בהתראות');return;}const result=await Notification.requestPermission();if(result==='granted'){showToast('התזכורות הופעלו');scheduleReminders();}else showToast('אפשר לאפשר התראות בהגדרות הדפדפן');}
-function scheduleReminders(){timeoutIds.forEach(clearTimeout);timeoutIds=[];if(!('Notification'in window)||Notification.permission!=='granted')return;for(const task of tasks){if(!task.time||!task.reminder||task.reminder==='none')continue;for(let offset=0;offset<2;offset++){const d=new Date(today);d.setDate(today.getDate()+offset);if(!taskOnDate(task,d)||doneOn(task,d))continue;const[h,min]=task.time.split(':').map(Number);d.setHours(h,min-Number(task.reminder),0,0);const delay=d-Date.now();if(delay>0&&delay<172800000)timeoutIds.push(setTimeout(()=>new Notification('היום שלי',{body:`תזכורת: ${task.title}`,icon:'icon.svg'}),delay));}}}
+async function enableNotifications(){if(!('Notification'in window)){showToast('הדפדפן הזה לא תומך בהתראות');return;}const result=await Notification.requestPermission();if(result==='granted'){showToast('התזכורות הופעלו');scheduleReminders();notify('התזכורות פעילות ✨ ככה ייראו ההתראות','test');subscribePush();}else showToast('אפשר לאפשר התראות בהגדרות הדפדפן');}
+async function notify(body,tag){const title='היום שלי',options={body,icon:'icon.svg',tag};try{const reg='serviceWorker'in navigator?await navigator.serviceWorker.getRegistration():null;if(reg&&reg.active){await reg.showNotification(title,options);return;}}catch(e){}try{new Notification(title,options);}catch(e){}}
+function scheduleReminders(){timeoutIds.forEach(clearTimeout);timeoutIds=[];if(!('Notification'in window)||Notification.permission!=='granted')return;for(const task of tasks){if(!task.time||!task.reminder||task.reminder==='none')continue;for(let offset=0;offset<2;offset++){const d=new Date(today);d.setDate(today.getDate()+offset);if(!taskOnDate(task,d)||doneOn(task,d))continue;const[h,min]=task.time.split(':').map(Number);d.setHours(h,min-Number(task.reminder),0,0);const delay=d-Date.now();if(delay>0&&delay<172800000)timeoutIds.push(setTimeout(()=>notify(`תזכורת: ${task.title}`,`${task.id}-${iso(d)}`),delay));}}}
 document.addEventListener('click',event=>{const target=event.target;if(target.closest('#open-drawer'))return toggleDrawer(true);if(target.closest('#week-schedule-button')){toggleDrawer(true);switchDrawer('recurring');return;}if(target.closest('#close-drawer')||target.closest('#drawer-overlay'))return toggleDrawer(false);const section=target.closest('.drawer-section');if(section)return switchDrawer(section.dataset.drawerView);if(target.closest('.close-dialog'))return $('#task-dialog').close();if(target.closest('#drawer-notification-button')||target.closest('#notification-button'))return enableNotifications();if(target.closest('#add-group')){switchDrawer('groups');$('#group-name-input').focus();return;}const weekDay=target.closest('[data-week-day]');if(weekDay){const day=Number(weekDay.dataset.weekDay);openDialog('recurring');$$('#repeat-days input').forEach(input=>input.checked=Number(input.value)===day);return;}const add=target.closest('.add-task');if(add)return openDialog(add.dataset.type);const editFromDrawer=target.closest('[data-edit-id]');if(editFromDrawer){const task=tasks.find(t=>t.id===editFromDrawer.dataset.editId);return openDialog(task.type,task);}const pill=target.closest('.date-pill');if(pill){selectedDate=parseDate(pill.dataset.date);render();return;}const day=target.closest('.calendar-day');if(day){selectedDate=parseDate(day.dataset.date);calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();$('#calendar-day-title').scrollIntoView({behavior:'smooth',block:'center'});return;}const row=target.closest('.task-row');if(row){const task=tasks.find(t=>t.id===row.dataset.id);if(!task)return;if(target.closest('.delete-task')){tasks=tasks.filter(t=>t.id!==task.id);save();render();showToast('המשימה נמחקה');}else if(target.closest('.edit-task'))openDialog(task.type,task);else if(target.matches('.task-check')){if(task.type==='general'){task.done ||= {};task.done.general=target.checked;save();render();}else setDone(task,selectedDate,target.checked);}}const deleteGroup=target.closest('.delete-group');if(deleteGroup){const id=deleteGroup.closest('.group-row').dataset.groupId;tasks.forEach(t=>{if(t.group===id)t.group='';});groups=groups.filter(g=>g.id!==id);save();render();showToast('הקבוצה הוסרה');}});
 document.addEventListener('change',event=>{if(event.target.matches('.group-color')){const group=groups.find(g=>g.id===event.target.closest('.group-row').dataset.groupId);group.color=event.target.value;save();render();}});
 $$('.tab').forEach(tab=>tab.addEventListener('click',()=>{$$('.tab').forEach(t=>t.classList.toggle('active',t===tab));$$('.view').forEach(v=>v.classList.toggle('active',v.id===`${tab.dataset.view}-view`));}));
 $('#task-form').addEventListener('submit',event=>{event.preventDefault();saveTask();});
 $('#group-form').addEventListener('submit',event=>{event.preventDefault();const input=$('#group-name-input'),name=input.value.trim();if(!name)return;groups.push({id:crypto.randomUUID(),name,color:$('#group-color-input').value});input.value='';save();render();showToast('הקבוצה נוספה');});
-$('#jump-today').addEventListener('click',()=>{selectedDate=new Date(today);render();});$('#prev-month').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();});$('#next-month').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();});$('#today-label').textContent=dateName(today);if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js');render();scheduleReminders();
+$('#jump-today').addEventListener('click',()=>{selectedDate=new Date(today);render();});$('#prev-month').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()-1);renderCalendar();});$('#next-month').addEventListener('click',()=>{calendarDate.setMonth(calendarDate.getMonth()+1);renderCalendar();});$('#today-label').textContent=dateName(today);if('serviceWorker'in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});render();scheduleReminders();
+
+/* ===== סנכרון בין מכשירים והתראות Push ===== */
+const syncKey='hayom-sheli-sync',updatedKey='hayom-sheli-updated';
+let syncTimer=null;
+const getCode=()=>localStorage.getItem(syncKey)||'';
+const tzName=()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){return 'UTC';}};
+function syncStatus(text){const el=$('#sync-status');if(el)el.textContent=text;}
+async function api(path,options={}){const res=await fetch(API_BASE+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});if(!res.ok)throw new Error('http-'+res.status);return res.json();}
+function queueSync(){if(!API_BASE||!getCode())return;clearTimeout(syncTimer);syncTimer=setTimeout(pushData,800);}
+async function pushData(){try{await api('/api/sync',{method:'PUT',body:JSON.stringify({code:getCode(),tasks,groups,tz:tzName(),updatedAt:Number(localStorage.getItem(updatedKey)||Date.now())})});syncStatus('מסונכרן ✓');return true;}catch(e){syncStatus('הסנכרון נכשל. ננסה שוב בשמירה הבאה');return false;}}
+async function pullData(){
+  if(!API_BASE||!getCode())return 'off';
+  try{
+    const data=await api('/api/sync?code='+encodeURIComponent(getCode()));
+    if(!data||!data.updatedAt)return 'empty';
+    if(data.updatedAt>Number(localStorage.getItem(updatedKey)||0)){
+      tasks=data.tasks||[];groups=data.groups||defaultGroups;
+      localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));localStorage.setItem(updatedKey,String(data.updatedAt));
+      scheduleReminders();render();return 'applied';
+    }
+    return 'same';
+  }catch(e){return 'error';}
+}
+function b64ToBytes(b64){const pad='='.repeat((4-b64.length%4)%4),raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+async function subscribePush(){
+  if(!API_BASE||!getCode())return false;
+  if(!('serviceWorker'in navigator)||!('PushManager'in window)){syncStatus('באייפון צריך קודם להוסיף את האפליקציה למסך הבית ולפתוח אותה משם');return false;}
+  if(!('Notification'in window)||Notification.permission!=='granted')return false;
+  try{
+    const reg=await navigator.serviceWorker.ready,{key}=await api('/api/vapid');
+    if(!key){syncStatus('בשרת חסר מפתח VAPID');return false;}
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(key)});
+    await api('/api/subscribe',{method:'POST',body:JSON.stringify({code:getCode(),subscription:sub.toJSON()})});
+    return true;
+  }catch(e){syncStatus('ההרשמה להתראות נכשלה');return false;}
+}
+function newSyncCode(){const chars='abcdefghjkmnpqrstuvwxyz23456789',bytes=crypto.getRandomValues(new Uint8Array(20));return [...bytes].map(b=>chars[b%chars.length]).join('');}
+async function connectSync(){
+  if(!API_BASE){showToast('חסרה כתובת שרת ב-app.js');return;}
+  const code=$('#sync-code-input').value.trim();
+  if(!/^[A-Za-z0-9_-]{8,64}$/.test(code)){showToast('הקוד צריך להיות לפחות 8 תווים (אותיות ומספרים)');return;}
+  if('Notification'in window&&Notification.permission==='default')await Notification.requestPermission();
+  localStorage.setItem(syncKey,code);
+  syncStatus('מתחבר...');
+  const result=await pullData();
+  if(result==='error'){syncStatus('אין חיבור לשרת');return;}
+  if(result==='empty'){localStorage.setItem(updatedKey,String(Date.now()));await pushData();}
+  const ok=await subscribePush();
+  if(ok){showToast('מחובר ✓');syncStatus('מחובר: סנכרון והתראות פעילים ✓');}
+  else if(!('Notification'in window)||Notification.permission!=='granted')syncStatus('מחובר לסנכרון. כדי לקבל התראות צריך לאשר אותן (באייפון: מתוך האפליקציה במסך הבית)');
+}
+function initSync(){
+  const input=$('#sync-code-input');
+  if(input)input.value=getCode();
+  $('#sync-new-code')?.addEventListener('click',()=>{$('#sync-code-input').value=newSyncCode();});
+  $('#sync-save-code')?.addEventListener('click',connectSync);
+  if(getCode()){syncStatus(API_BASE?'מחובר':'חסרה כתובת שרת ב-app.js');pullData();}
+  document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')pullData();});
+}
+initSync();
+

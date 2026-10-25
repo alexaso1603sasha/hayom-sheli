@@ -14,6 +14,12 @@
     <link rel="stylesheet" href="styles.css" />
     <link rel="stylesheet" href="enhancements.css" />
     <title>היום שלי</title>
+    <style>
+      .sync-box{margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(109,91,208,.18)}
+      .sync-box input{width:100%;box-sizing:border-box;padding:.75rem;border-radius:12px;border:1px solid rgba(109,91,208,.3);font:inherit;margin:.5rem 0}
+      .sync-actions{display:flex;gap:.5rem}
+      .sync-actions button{flex:1}
+    </style>
   </head>
   <body>
     <button id="open-drawer" class="drawer-handle" aria-label="פתיחת סרגל פעולות"><span>☰</span><b>פעולות</b></button>
@@ -101,7 +107,7 @@
       <button class="drawer-section" data-drawer-view="reminders"><span class="drawer-icon">♧</span><span><strong>תזכורות</strong><small>הפעלה בטלפון ובמחשב</small></span></button>
       <section class="drawer-page active" id="recurring-drawer"><div class="drawer-page-title"><div><p class="eyebrow">השגרה שלך</p><h3>טבלת השבוע</h3></div><button class="small-round add-task" data-type="recurring" aria-label="משימה קבועה חדשה">＋</button></div><p class="drawer-help">לחצי על יום כדי להוסיף אליו משימה קבועה, או על משימה קיימת כדי לערוך אותה.</p><div id="week-table" class="week-table"></div></section>
       <section class="drawer-page" id="groups-drawer"><div class="drawer-page-title"><h3>הקבוצות שלך</h3><button id="add-group" class="small-round" aria-label="קבוצה חדשה">＋</button></div><p class="drawer-help">אפשר להוסיף, לשנות צבע או למחוק קבוצה. משימות שכבר שויכו נשארות מסודרות.</p><div id="group-list" class="drawer-list"></div><form id="group-form" class="group-form"><input id="group-name-input" maxlength="30" placeholder="למשל: קניות" required /><input id="group-color-input" type="color" value="#6d5bd0" aria-label="צבע הקבוצה" /><button class="primary-button">הוספת קבוצה</button></form></section>
-      <section class="drawer-page" id="reminders-drawer"><h3>תזכורות</h3><p class="drawer-help">לחצי על הכפתור ואשרי התראות. כשהאפליקציה פתוחה, התזכורות שהגדרת יוצגו במכשיר.</p><button id="drawer-notification-button" class="primary-button">הפעלת תזכורות</button><p class="notification-note">כדי לקבל התראות באייפון גם כשהאפליקציה סגורה, נפרסם אותה ונחבר שירות התראות בשלב הבא.</p></section>
+      <section class="drawer-page" id="reminders-drawer"><h3>תזכורות</h3><p class="drawer-help">לחצי על הכפתור ואשרי התראות. כשהאפליקציה פתוחה, התזכורות שהגדרת יוצגו במכשיר.</p><button id="drawer-notification-button" class="primary-button">הפעלת תזכורות</button><div class="sync-box"><h3>סנכרון בין מכשירים</h3><p class="drawer-help">אותו קוד בטלפון ובמחשב = אותן משימות ואותן התראות, גם כשהאפליקציה סגורה. ב"קוד חדש" מייצרים קוד, ואת אותו הקוד מקלידים במכשיר השני.</p><input id="sync-code-input" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="קוד סנכרון" /><div class="sync-actions"><button id="sync-new-code" type="button" class="secondary-button">קוד חדש</button><button id="sync-save-code" type="button" class="primary-button">חיבור</button></div><p id="sync-status" class="notification-note"></p></div></section>
     </aside>
     <div id="toast" class="toast" role="status"></div>
     <script src="app.js"></script>
