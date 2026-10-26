@@ -84,17 +84,18 @@ function localNow(tz, at = new Date()) {
 // מחזירה את התזכורות שהגיע זמנן ועוד לא נשלחו. חלון של 5 דקות כדי לא לפספס אם ה-Cron התעכב.
 function findDue(data, now, sent) {
   const due = [];
-  for (let off = 0; off < 2; off++) {
+  for (let off = 0; off < 3; off++) {
     const date = addDays(now.date, off), weekday = (now.weekday + off) % 7;
     for (const t of data.tasks || []) {
-      if (!t || t.type === 'general' || !t.time || !t.reminder || t.reminder === 'none') continue;
+      const dayB = !!t && t.reminder === 'day';
+      if (!t || t.type === 'general' || !t.reminder || t.reminder === 'none' || (!t.time && !dayB)) continue;
       const occurs = t.type === 'dated' ? t.date === date : t.type === 'recurring' && Array.isArray(t.days) && t.days.includes(weekday);
       if (!occurs || (t.done && t.done[date])) continue;
-      const [h, m] = String(t.time).split(':').map(Number);
+      const [h, m] = String(dayB ? (t.remindAt || '20:00') : t.time).split(':').map(Number);
       if (Number.isNaN(h) || Number.isNaN(m)) continue;
-      const at = off * 1440 + h * 60 + m - Number(t.reminder);
+      const at = dayB ? (off - 1) * 1440 + h * 60 + m : off * 1440 + h * 60 + m - Number(t.reminder);
       const id = `${t.id}|${date}`;
-      if (now.minutes >= at && now.minutes < at + 5 && !sent[id]) due.push({ id, title: String(t.title || ''), tag: `${t.id}-${date}` });
+      if (now.minutes >= at && now.minutes < at + 5 && !sent[id]) due.push({ id, title: String(t.title || ''), tag: `${t.id}-${date}`, detail: dayB ? `מחר${t.time ? ' בשעה ' + t.time : ''}` : (Number(t.reminder) ? `בעוד ${Number(t.reminder)} דקות` : `עכשיו · ${t.time}`) });
     }
   }
   return due;
@@ -111,7 +112,7 @@ async function processUser(env, code) {
   if (!subs.length) return;
   const sent = { ...sentRaw }, gone = new Set();
   for (const item of due) {
-    const payload = JSON.stringify({ title: 'יומי', body: `תזכורת: ${item.title}`, tag: item.tag });
+    const payload = JSON.stringify({ title: 'יומי', body: `${item.title}\n${item.detail}`, tag: item.tag });
     let delivered = false;
     for (const sub of subs) {
       try {

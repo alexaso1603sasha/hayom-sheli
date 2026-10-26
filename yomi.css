@@ -127,3 +127,17 @@ fieldset{border:0;padding:0;margin:0}legend{font-weight:600;font-size:.92rem;mar
  .task-row{flex-wrap:wrap}.edit-task{margin-inline-start:auto}
  .menu-button{padding:0 12px}
 }
+
+/* v2 */
+.action-drawer{right:auto;left:0;transform:translateX(-105%);box-shadow:10px 0 40px rgba(0,0,0,.2)}
+.date-pill.today{border:2px solid var(--gold)}.date-pill.today span{color:var(--gold);font-weight:700}
+.focus-card{background:#f3ecdc;border-color:#e6d9b8}
+.primary-button,.menu-button{box-shadow:0 4px 14px rgba(61,49,82,.2)}
+.hero{box-shadow:0 12px 36px rgba(61,49,82,.22)}
+.tab.active,.date-pill.selected,.calendar-day.selected{box-shadow:0 4px 16px rgba(61,49,82,.28),0 0 12px rgba(184,146,74,.22)}
+.calendar-day.selected .calendar-dot{box-shadow:0 0 0 1.5px #fff}
+:focus-visible{outline:3px solid rgba(184,146,74,.5);outline-offset:2px}
+.fab{position:fixed;inset-inline-start:20px;bottom:24px;width:58px;height:58px;border-radius:50%;border:0;background:var(--plum);color:#f5e7bd;font-size:1.9rem;line-height:1;box-shadow:0 8px 22px rgba(61,49,82,.35),0 0 18px rgba(184,146,74,.25);z-index:20}
+.daybefore-field{display:none;gap:6px}.field-label{font-weight:600;font-size:.92rem}
+.card-title-row .small-round,.day-dialog .small-round{background:var(--plum);color:#f5e7bd;border:0}
+@media (max-width:720px){.fab{bottom:96px}}

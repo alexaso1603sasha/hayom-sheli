@@ -1,4 +1,4 @@
-const CACHE='hayom-sheli-v4';
+const CACHE='hayom-sheli-v5';
 const ASSETS=['./','index.html','yomi.css','icon-180.png','icon-512.png','app.js','manifest.webmanifest','icon.svg'];
 
 self.addEventListener('install',event=>{
@@ -34,7 +34,7 @@ self.addEventListener('push',event=>{
   const data=event.data?.json()||{};
   event.waitUntil(self.registration.showNotification(data.title||'יומי',{
     body:data.body||'יש לך תזכורת חדשה',
-    icon:'icon.svg',
+    icon:'icon-180.png',dir:'rtl',lang:'he',
     tag:data.tag||undefined
   }));
 });
