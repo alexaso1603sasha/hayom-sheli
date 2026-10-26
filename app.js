@@ -10,6 +10,7 @@ const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parseDate = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
 let today = new Date(); today.setHours(0, 0, 0, 0);
+let nudgeIndex = 0, nudgeTimer = null;
 let selectedDate = new Date(today), calendarDate = new Date(today.getFullYear(), today.getMonth(), 1), dialogDate = new Date(today), modalType = 'dated', editingTaskId = null, timeoutIds = [];
 
 const sample = [
@@ -123,9 +124,9 @@ initSync();
 /* גלגלות שעה ודקות */
 function markWheel(el){[...el.children].forEach(c=>c.classList.toggle('sel',c.dataset.v===(el.dataset.v||'')));}
 function initWheel(el){
-  const inp=document.createElement('input');inp.type='text';inp.className='time-type';inp.inputMode='numeric';inp.maxLength=2;inp.placeholder='--';inp.setAttribute('aria-label',el.getAttribute('aria-label')||'');el.before(inp);
+  const inp=document.createElement('input');inp.type='text';inp.className='time-type';inp.inputMode='numeric';inp.maxLength=2;inp.placeholder=el.getAttribute('aria-label')||'--';inp.setAttribute('aria-label',el.getAttribute('aria-label')||'');const col=document.createElement('div'),cap=document.createElement('small');col.className='time-col';cap.textContent=el.getAttribute('aria-label')||'';el.before(col);col.append(cap,inp,el);
   const max=()=>el.children.length-2,pad=n=>String(n).padStart(2,'0');
-  inp.addEventListener('input',()=>{const d=inp.value.replace(/\D/g,'');inp.value=d;el.dataset.v=d?pad(Math.min(max(),parseInt(d,10))):'';if(d.length===2&&el.id.endsWith('hour-input'))el.parentElement.querySelectorAll('.time-type')[1]?.focus();});
+  inp.addEventListener('input',()=>{const d=inp.value.replace(/\D/g,'');inp.value=d;el.dataset.v=d?pad(Math.min(max(),parseInt(d,10))):'';if(d.length===2&&el.id.endsWith('hour-input'))el.closest('.time-picker').querySelectorAll('.time-type')[1]?.focus();});
   inp.addEventListener('blur',()=>{inp.value=el.dataset.v||'';});
   inp.addEventListener('focus',()=>inp.select());
   Object.defineProperty(el,'value',{get(){return el.dataset.v||'';},set(v){el.dataset.v=v;inp.value=v;const i=[...el.children].findIndex(c=>c.dataset.v===v);el.scrollTop=Math.max(0,i)*44;markWheel(el);}});
@@ -147,8 +148,7 @@ $$('.wheel').forEach(el=>{
 });
 
 /* הודעות מתחלפות: משימות כלליות שלא בוצעו כבר זמן מה */
-let nudgeIndex=0,nudgeTimer=null;
-const staleTasks=()=>tasks.filter(t=>t.type==='general'&&!t.done?.general&&!t.dismissed&&t.createdAt&&Date.now()-t.createdAt>=STALE_DAYS*864e5).sort((a,b)=>a.createdAt-b.createdAt);
+function staleTasks(){return tasks.filter(t=>t.type==='general'&&!t.done?.general&&!t.dismissed&&t.createdAt&&Date.now()-t.createdAt>=STALE_DAYS*864e5).sort((a,b)=>a.createdAt-b.createdAt);}
 function ageText(ms){const d=Math.floor(ms/864e5);if(d<7)return d<=1?'יום':`${d} ימים`;const w=Math.floor(d/7);if(d<30)return w===1?'שבוע':w===2?'שבועיים':`${w} שבועות`;const mo=Math.floor(d/30);if(d<365)return mo===1?'חודש':mo===2?'חודשיים':`${mo} חודשים`;const y=Math.floor(d/365);return y===1?'שנה':y===2?'שנתיים':`${y} שנים`;}
 function showNudge(fade){const list=staleTasks(),t=list[nudgeIndex%Math.max(list.length,1)],body=$('#nudge-body');if(!t)return;const set=()=>{body.innerHTML=`<p class="nudge-text">${escapeHtml(t.title)}</p><p class="nudge-age">לא בוצעה כבר ${ageText(Date.now()-t.createdAt)}</p>`;$('#nudge-ignore').dataset.id=t.id;$('#nudge-dots').innerHTML=list.length>1?list.map((_,i)=>`<i class="${i===nudgeIndex%list.length?'on':''}"></i>`).join(''):'';body.classList.remove('out');};if(fade){body.classList.add('out');setTimeout(set,250);}else set();}
 function renderNudge(){const box=$('#nudge'),list=staleTasks();clearInterval(nudgeTimer);box.hidden=!list.length;$('#hero-default').hidden=!!list.length;if(!list.length)return;nudgeIndex%=list.length;showNudge(false);if(list.length>1)nudgeTimer=setInterval(()=>{nudgeIndex=(nudgeIndex+1)%staleTasks().length;showNudge(true);},6500);}

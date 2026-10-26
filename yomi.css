@@ -168,3 +168,15 @@ fieldset{border:0;padding:0;margin:0}legend{font-weight:600;font-size:.92rem;mar
 .nudge-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .nudge-ignore{min-height:40px;padding:0 18px;border-radius:999px;background:rgba(255,255,255,.1);color:#faf7f2;border:1px solid rgba(243,220,154,.55);font-size:.92rem}
 .nudge-dots{display:flex;gap:6px}.nudge-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3)}.nudge-dots i.on{background:#f3dc9a;box-shadow:0 0 8px rgba(243,220,154,.6)}
+
+/* v4 */
+.hero::after{display:none;animation:none}
+.hero{background:radial-gradient(120% 150% at 88% -25%,rgba(243,220,154,.34),transparent 55%),linear-gradient(135deg,#4d3d68,#2c2438);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 14px 36px rgba(61,49,82,.28)}
+.primary-button,.menu-button,.add-round,.tab.active,.date-pill.selected,.calendar-day.selected,.card-title-row .small-round,.day-dialog .small-round{background-image:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,.04) 50%,rgba(0,0,0,.08));box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 5px 14px rgba(61,49,82,.28)}
+.card{background:linear-gradient(180deg,#fff,#fffdf8)}
+.date-pill.today:not(.selected),.calendar-day.today:not(.selected){border:1px solid #e3d3a4;background:linear-gradient(180deg,#faf2dc,#f3e8c8)}
+.date-pill.today.selected,.calendar-day.today.selected{border:1px solid var(--plum);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 4px 16px rgba(61,49,82,.3),0 0 14px rgba(212,175,55,.35)}
+.time-col{display:grid;justify-items:center}
+.time-col small{height:22px;font-size:.8rem;color:var(--muted)}
+.time-picker::before{top:66px}
+.time-picker span{margin-top:22px}
