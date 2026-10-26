@@ -141,3 +141,30 @@ fieldset{border:0;padding:0;margin:0}legend{font-weight:600;font-size:.92rem;mar
 .daybefore-field{display:none;gap:6px}.field-label{font-weight:600;font-size:.92rem}
 .card-title-row .small-round,.day-dialog .small-round{background:var(--plum);color:#f5e7bd;border:0}
 @media (max-width:720px){.fab{bottom:96px}}
+
+/* v3 */
+:root{--gold:#d4af37}
+[hidden]{display:none!important}
+.eyebrow,.text-button{color:#9a7620}.hero .eyebrow{color:#f3dc9a}
+.hero{position:relative;overflow:hidden}.hero>div{flex:1;min-width:0}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(115deg,transparent 40%,rgba(255,236,170,.16) 50%,transparent 60%);transform:translateX(-120%);animation:sheen 8s ease-in-out infinite;pointer-events:none}
+@keyframes sheen{0%,55%{transform:translateX(-120%)}100%{transform:translateX(120%)}}
+@media (prefers-reduced-motion:reduce){.hero::after{animation:none}}
+.brand-mark{background:linear-gradient(135deg,#4d3d68,#2c2438);color:#f3dc9a;box-shadow:0 0 0 2px #e6c565,0 4px 12px rgba(212,175,55,.35)}
+.primary-button,.menu-button,.add-round,.tab.active,.date-pill.selected,.calendar-day.selected,.card-title-row .small-round,.day-dialog .small-round{background-image:linear-gradient(180deg,rgba(255,255,255,.18),rgba(255,255,255,0) 55%)}
+.date-pill.today:not(.selected),.calendar-day.today:not(.selected){border:2px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(135deg,#f6e3a1,#d4af37 50%,#f6e3a1) border-box}
+.date-pill.today span{color:#9a7620}
+.date-pill.selected.today,.calendar-day.selected.today{box-shadow:0 0 0 2px #e8c860,0 4px 16px rgba(61,49,82,.28)}
+.add-round{display:grid;place-items:center;width:54px;height:54px;margin:16px auto 0;border:0;border-radius:50%;background-color:var(--plum);color:#f5e7bd;font-size:1.8rem;line-height:1;box-shadow:0 8px 20px rgba(61,49,82,.3),0 0 0 3px rgba(212,175,55,.35)}
+.fab{display:none}
+.time-type{display:none}
+.time-picker input.time-type{width:76px;min-height:52px;padding:0;text-align:center;font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;border-radius:14px;z-index:1}
+@media (pointer:fine){.wheel,.time-picker::before{display:none}.time-picker input.time-type{display:block}}
+.nudge{margin-top:16px;padding:14px 16px;max-width:520px;background:rgba(255,255,255,.09);border:1px solid rgba(243,220,154,.4);border-radius:18px;backdrop-filter:blur(6px);box-shadow:0 0 24px rgba(212,175,55,.12)}
+.nudge-label{color:#f3dc9a;font-size:.78rem;font-weight:600;letter-spacing:.1em}
+.nudge-body{min-height:68px;padding:8px 0;transition:opacity .25s,transform .25s}.nudge-body.out{opacity:0;transform:translateY(6px)}
+.nudge-text{font-size:1.25rem;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.nudge-age{margin-top:4px;color:#f3dc9a;font-size:.92rem}
+.nudge-foot{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.nudge-ignore{min-height:40px;padding:0 18px;border-radius:999px;background:rgba(255,255,255,.1);color:#faf7f2;border:1px solid rgba(243,220,154,.55);font-size:.92rem}
+.nudge-dots{display:flex;gap:6px}.nudge-dots i{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.3)}.nudge-dots i.on{background:#f3dc9a;box-shadow:0 0 8px rgba(243,220,154,.6)}

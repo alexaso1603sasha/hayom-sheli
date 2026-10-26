@@ -40,7 +40,8 @@
         <div>
           <p class="eyebrow" id="today-label"></p>
           <h1>בואי נעשה מקום למה שחשוב.</h1>
-          <p class="hero-copy">תכנון עדין ליום ממוקד יותר.</p>
+          <p class="hero-copy" id="hero-default">תכנון עדין ליום ממוקד יותר.</p>
+          <div id="nudge" class="nudge" hidden><p class="nudge-label">✦ שווה לזכור</p><div id="nudge-body" class="nudge-body"></div><div class="nudge-foot"><button id="nudge-ignore" class="nudge-ignore" type="button">התעלמות</button><span id="nudge-dots" class="nudge-dots"></span></div></div>
         </div>
         
       </section>
@@ -61,6 +62,7 @@
           <section class="card schedule-card">
             <div class="card-title-row"><h3>לוח זמנים</h3><span id="daily-progress" class="progress-pill"></span></div>
             <div id="daily-tasks" class="task-list"></div>
+            <button class="add-round add-task" data-type="dated" aria-label="הוספת משימה ליום הזה">＋</button>
             
           </section>
           <aside class="side-stack">
@@ -85,11 +87,10 @@
 
       <section class="view" id="inbox-view">
         <div class="section-heading"><div><p class="eyebrow">בלי תאריך</p><h2>משימות כלליות</h2></div></div>
-        <section class="card"><div id="general-tasks" class="task-list"></div></section>
+        <section class="card"><div id="general-tasks" class="task-list"></div><button class="add-round add-task" data-type="general" aria-label="הוספת משימה כללית">＋</button></section>
       </section>
     </main>
 
-    <button id="fab" class="fab add-task" data-type="dated" aria-label="משימה חדשה">＋</button>
     <dialog id="task-dialog" class="task-dialog">
       <form id="task-form" method="dialog">
         <div class="dialog-heading"><div><p class="eyebrow" id="dialog-kind"></p><h2 id="dialog-title">משימה חדשה</h2></div><button type="button" class="close-button close-dialog" aria-label="סגירה">×</button></div>

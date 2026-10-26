@@ -1,4 +1,4 @@
-const CACHE='hayom-sheli-v5';
+const CACHE='hayom-sheli-v6';
 const ASSETS=['./','index.html','yomi.css','icon-180.png','icon-512.png','app.js','manifest.webmanifest','icon.svg'];
 
 self.addEventListener('install',event=>{
