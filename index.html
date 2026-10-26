@@ -3,16 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#6d5bd0" />
+    <meta name="theme-color" content="#1c1a22" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="apple-touch-icon" href="icon.svg" />
+    <link rel="apple-touch-icon" href="icon-180.png" />
     <link rel="stylesheet" href="styles.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@400;500;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="enhancements.css" />
+    <link rel="stylesheet" href="luxury.css" />
     <title>היום שלי</title>
     <style>
       .sync-box{margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(109,91,208,.18)}
@@ -79,7 +81,7 @@
       <section class="view" id="calendar-view">
         <div class="section-heading"><div><p class="eyebrow">תכנון קדימה</p><h2>יומן</h2></div><div class="calendar-controls"><button id="prev-month">‹</button><strong id="month-title"></strong><button id="next-month">›</button></div></div>
         <section class="card calendar-card"><div class="calendar-weekdays"><span>א׳</span><span>ב׳</span><span>ג׳</span><span>ד׳</span><span>ה׳</span><span>ו׳</span><span>ש׳</span></div><div id="calendar-grid" class="calendar-grid"></div></section>
-        <section class="card day-editor"><div class="card-title-row"><div><p class="eyebrow">עריכת היום</p><h3 id="calendar-day-title"></h3></div><button class="primary-button add-task" data-type="dated">＋ משימה ליום הזה</button></div><div id="calendar-day-tasks" class="task-list"></div></section>
+        
       </section>
 
       <section class="view" id="inbox-view">
@@ -99,13 +101,14 @@
         <div class="dialog-actions"><button type="button" class="secondary-button close-dialog">ביטול</button><button id="save-task" class="primary-button">שמירה</button></div>
       </form>
     </dialog>
+    <dialog id="day-dialog" class="task-dialog day-dialog"><button type="button" class="close-button close-day" aria-label="סגירה">×</button><section class="card day-editor"><div class="card-title-row"><div><p class="eyebrow">עריכת היום</p><h3 id="calendar-day-title"></h3></div><button class="primary-button add-task" data-type="dated">＋ משימה ליום הזה</button></div><div id="calendar-day-tasks" class="task-list"></div></section></dialog>
     <div id="drawer-overlay" class="drawer-overlay"></div>
-    <aside id="action-drawer" class="action-drawer" aria-label="סרגל פעולות">
-      <div class="drawer-header"><div><p class="eyebrow">הארגון שלך</p><h2>סרגל פעולות</h2></div><button id="close-drawer" class="close-button" aria-label="סגירה">×</button></div>
-      <button class="drawer-section active" data-drawer-view="recurring"><span class="drawer-icon">↻</span><span><strong>משימות קבועות</strong><small>עריכה של השגרה שלך</small></span></button>
+    <aside id="action-drawer" class="action-drawer" data-mode="menu" aria-label="סרגל פעולות">
+      <div class="drawer-header"><button id="drawer-back" class="back-button" type="button">→ חזרה</button><div><p class="eyebrow">הארגון שלך</p><h2>סרגל פעולות</h2></div><button id="close-drawer" class="close-button" aria-label="סגירה">×</button></div>
+      <button class="drawer-section" data-drawer-view="recurring"><span class="drawer-icon">↻</span><span><strong>משימות קבועות</strong><small>עריכה של השגרה שלך</small></span></button>
       <button class="drawer-section" data-drawer-view="groups"><span class="drawer-icon">●</span><span><strong>קבוצות פעולות</strong><small>קטגוריות וצבעים</small></span></button>
       <button class="drawer-section" data-drawer-view="reminders"><span class="drawer-icon">♧</span><span><strong>תזכורות</strong><small>הפעלה בטלפון ובמחשב</small></span></button>
-      <section class="drawer-page active" id="recurring-drawer"><div class="drawer-page-title"><div><p class="eyebrow">השגרה שלך</p><h3>טבלת השבוע</h3></div><button class="small-round add-task" data-type="recurring" aria-label="משימה קבועה חדשה">＋</button></div><p class="drawer-help">לחצי על יום כדי להוסיף אליו משימה קבועה, או על משימה קיימת כדי לערוך אותה.</p><div id="week-table" class="week-table"></div></section>
+      <section class="drawer-page" id="recurring-drawer"><div class="drawer-page-title"><div><p class="eyebrow">השגרה שלך</p><h3>טבלת השבוע</h3></div><button class="small-round add-task" data-type="recurring" aria-label="משימה קבועה חדשה">＋</button></div><p class="drawer-help">לחצי על יום כדי להוסיף אליו משימה קבועה, או על משימה קיימת כדי לערוך אותה.</p><div id="week-table" class="week-table"></div></section>
       <section class="drawer-page" id="groups-drawer"><div class="drawer-page-title"><h3>הקבוצות שלך</h3><button id="add-group" class="small-round" aria-label="קבוצה חדשה">＋</button></div><p class="drawer-help">אפשר להוסיף, לשנות צבע או למחוק קבוצה. משימות שכבר שויכו נשארות מסודרות.</p><div id="group-list" class="drawer-list"></div><form id="group-form" class="group-form"><input id="group-name-input" maxlength="30" placeholder="למשל: קניות" required /><input id="group-color-input" type="color" value="#6d5bd0" aria-label="צבע הקבוצה" /><button class="primary-button">הוספת קבוצה</button></form></section>
       <section class="drawer-page" id="reminders-drawer"><h3>תזכורות</h3><p class="drawer-help">לחצי על הכפתור ואשרי התראות. כשהאפליקציה פתוחה, התזכורות שהגדרת יוצגו במכשיר.</p><button id="drawer-notification-button" class="primary-button">הפעלת תזכורות</button><div class="sync-box"><h3>סנכרון בין מכשירים</h3><p class="drawer-help">אותו קוד בטלפון ובמחשב = אותן משימות ואותן התראות, גם כשהאפליקציה סגורה. ב"קוד חדש" מייצרים קוד, ואת אותו הקוד מקלידים במכשיר השני.</p><input id="sync-code-input" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="קוד סנכרון" /><div class="sync-actions"><button id="sync-new-code" type="button" class="secondary-button">קוד חדש</button><button id="sync-save-code" type="button" class="primary-button">חיבור</button></div><p id="sync-status" class="notification-note"></p></div></section>
     </aside>

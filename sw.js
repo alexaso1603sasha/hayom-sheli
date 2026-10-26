@@ -1,9 +1,9 @@
-const CACHE='hayom-sheli-v2';
-const ASSETS=['./','index.html','styles.css','enhancements.css','app.js','manifest.webmanifest','icon.svg'];
+const CACHE='hayom-sheli-v3';
+const ASSETS=['./','index.html','styles.css','enhancements.css','luxury.css','icon-180.png','icon-512.png','app.js','manifest.webmanifest','icon.svg'];
 
 self.addEventListener('install',event=>{
   self.skipWaiting();
-  event.waitUntil(caches.open(CACHE).then(cache=>cache.addAll(ASSETS)));
+  event.waitUntil(caches.open(CACHE).then(cache=>Promise.allSettled(ASSETS.map(a=>cache.add(a)))));
 });
 
 self.addEventListener('activate',event=>{
