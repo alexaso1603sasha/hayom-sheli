@@ -88,9 +88,9 @@ function findDue(data, now, sent) {
     const date = addDays(now.date, off), weekday = (now.weekday + off) % 7;
     for (const t of data.tasks || []) {
       const dayB = !!t && t.reminder === 'day';
-      if (!t || t.type === 'general' || !t.reminder || t.reminder === 'none' || (!t.time && !dayB)) continue;
-      const occurs = t.type === 'dated' ? t.date === date : t.type === 'recurring' && Array.isArray(t.days) && t.days.includes(weekday);
-      if (!occurs || (t.done && t.done[date])) continue;
+      if (!t || (t.type === 'general' && !t.remindDate) || !t.reminder || t.reminder === 'none' || (!t.time && !dayB)) continue;
+      const occurs = t.type === 'general' ? t.remindDate === date : t.type === 'dated' ? t.date === date : t.type === 'recurring' && Array.isArray(t.days) && t.days.includes(weekday) && !(t.skip && t.skip[date]);
+      if (!occurs || (t.done && (t.done[date] || (t.type === 'general' && t.done.general)))) continue;
       const [h, m] = String(dayB ? (t.remindAt || '20:00') : t.time).split(':').map(Number);
       if (Number.isNaN(h) || Number.isNaN(m)) continue;
       const at = dayB ? (off - 1) * 1440 + h * 60 + m : off * 1440 + h * 60 + m - Number(t.reminder);
@@ -112,7 +112,7 @@ async function processUser(env, code) {
   if (!subs.length) return;
   const sent = { ...sentRaw }, gone = new Set();
   for (const item of due) {
-    const payload = JSON.stringify({ title: 'יומי', body: `${item.title}\n${item.detail}`, tag: item.tag });
+    const payload = JSON.stringify({ title: item.title, body: item.detail, tag: item.tag });
     let delivered = false;
     for (const sub of subs) {
       try {
