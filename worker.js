@@ -158,7 +158,7 @@ async function handle(request, env) {
     if (text.length > 400000) return reply(env, { error: 'too large' }, 413);
     let body; try { body = JSON.parse(text); } catch (e) { return reply(env, { error: 'bad json' }, 400); }
     if (!validCode(body.code) || !Array.isArray(body.tasks) || !Array.isArray(body.groups)) return reply(env, { error: 'bad data' }, 400);
-    await env.KV.put('d:' + body.code, JSON.stringify({ tasks: body.tasks, groups: body.groups, tz: String(body.tz || 'UTC'), updatedAt: Number(body.updatedAt) || Date.now() }));
+    await env.KV.put('d:' + body.code, JSON.stringify({ tasks: body.tasks, groups: body.groups, lists: Array.isArray(body.lists) ? body.lists : [], tz: String(body.tz || 'UTC'), updatedAt: Number(body.updatedAt) || Date.now() }));
     const idx = (await env.KV.get('idx', 'json')) || [];
     if (!idx.includes(body.code)) { idx.push(body.code); await env.KV.put('idx', JSON.stringify(idx)); }
     return reply(env, { ok: true });
