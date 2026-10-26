@@ -180,3 +180,26 @@ fieldset{border:0;padding:0;margin:0}legend{font-weight:600;font-size:.92rem;mar
 .time-col small{height:22px;font-size:.8rem;color:var(--muted)}
 .time-picker::before{top:66px}
 .time-picker span{margin-top:22px}
+
+/* v5: בהיר יותר, סרגל חלק, יום נוכחי ברור, פלוס ממורכז */
+:root{--plum:#2f6fc4}
+.hero{background:radial-gradient(120% 150% at 88% -25%,rgba(214,235,255,.4),transparent 55%),linear-gradient(135deg,#3b82dc,#1f5aa8)}
+.brand-mark{background:linear-gradient(135deg,#3b82dc,#1f5aa8)}
+.hero-copy{opacity:.95}
+.progress-pill,.task-time,.week-task small{color:#1f5aa8}
+.date-pill.today:not(.selected),.calendar-day.today:not(.selected){background:#cfe6ff;border:1px solid #9cc7f2;color:#12233f}
+.date-pill.today:not(.selected) strong,.calendar-day.today:not(.selected) .day-number{color:#12233f;font-weight:800}
+.date-pill.today::after{content:"היום";font-size:.68rem;font-weight:700;color:#1f5aa8;line-height:1}
+.date-pill.today.selected::after{color:#d6ebff}
+.date-pill{min-height:78px}
+.date-pill.today.selected,.calendar-day.today.selected{border-color:var(--plum);box-shadow:0 0 0 3px #bfe0ff,0 6px 16px rgba(29,79,145,.3)}
+.calendar-dot{width:7px;height:7px}
+.action-drawer{width:min(100%,400px);visibility:hidden;will-change:transform;contain:layout paint;-webkit-overflow-scrolling:touch;transition:transform .32s cubic-bezier(.22,.8,.26,1),visibility 0s linear .32s}
+.action-drawer.open{visibility:visible;transition:transform .32s cubic-bezier(.22,.8,.26,1),visibility 0s}
+.action-drawer[data-mode=page]{width:100%}
+.drawer-overlay{transition:opacity .3s ease;backdrop-filter:none}
+.add-round,.small-round.add-task,#add-group{position:relative;font-size:0}
+.add-round::before,.add-round::after,.small-round.add-task::before,.small-round.add-task::after,#add-group::before,#add-group::after{content:"";position:absolute;inset:0;margin:auto;background:currentColor;border-radius:2px}
+.add-round::before,.small-round.add-task::before,#add-group::before{width:20px;height:3px}
+.add-round::after,.small-round.add-task::after,#add-group::after{width:3px;height:20px}
+.drawer-page-title .small-round{background:var(--plum);color:#fff;border:0}
