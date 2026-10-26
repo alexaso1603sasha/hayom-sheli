@@ -11,10 +11,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
     <link rel="apple-touch-icon" href="icon-180.png" />
-    <link rel="stylesheet" href="styles.css" />
-    <link rel="stylesheet" href="enhancements.css" />
-    <link rel="stylesheet" href="luxury.css" />
-    <title>היום שלי</title>
+    <link rel="stylesheet" href="yomi.css" />
+    
+    
+    <title>יומי</title>
     <style>
       .sync-box{margin-top:1.25rem;padding-top:1rem;border-top:1px solid rgba(109,91,208,.18)}
       .sync-box input{width:100%;box-sizing:border-box;padding:.75rem;border-radius:12px;border:1px solid rgba(109,91,208,.3);font:inherit;margin:.5rem 0}
@@ -25,9 +25,9 @@
   <body>
     <main class="app-shell">
       <header class="topbar">
-        <a class="brand" href="#today" aria-label="היום שלי">
+        <a class="brand" href="#today" aria-label="יומי">
           <span class="brand-mark">✦</span>
-          <span>היום שלי</span>
+          <span>יומי</span>
         </a>
         <div class="header-actions">
           <button id="open-drawer" class="menu-button" type="button" aria-label="פתיחת סרגל פעולות"><span aria-hidden="true">☰</span> פעולות</button>
@@ -93,7 +93,7 @@
       <form id="task-form" method="dialog">
         <div class="dialog-heading"><div><p class="eyebrow" id="dialog-kind"></p><h2 id="dialog-title">משימה חדשה</h2></div><button type="button" class="close-button close-dialog" aria-label="סגירה">×</button></div>
         <label>מה תרצי לעשות?<input id="task-title-input" name="title" required maxlength="80" placeholder="למשל: אימון פילאטיס" autocomplete="off" /></label>
-        <div class="form-grid"><label>שעה <div class="time-picker"><select id="task-hour-input" aria-label="שעה"></select><span>:</span><select id="task-minute-input" aria-label="דקות"></select></div></label><label class="date-field">תאריך <output id="task-date-display" class="date-display"></output></label></div>
+        <div class="form-grid"><label>שעה <div class="time-picker"><div id="task-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="task-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="date-field">תאריך <output id="task-date-display" class="date-display"></output></label></div>
         <label class="reminder-field">תזכורת <select id="reminder-input" name="reminder"><option value="none">ללא תזכורת</option><option value="0">בזמן המשימה</option><option value="5">5 דקות לפני</option><option value="15">15 דקות לפני</option><option value="30">30 דקות לפני</option><option value="60">שעה לפני</option></select></label>
         <label class="group-field">קבוצה <select id="group-input" name="group"></select></label>
         <fieldset id="repeat-days"><legend>באילו ימים?</legend><div class="weekday-pills"><label><input type="checkbox" value="0" />א׳</label><label><input type="checkbox" value="1" />ב׳</label><label><input type="checkbox" value="2" />ג׳</label><label><input type="checkbox" value="3" />ד׳</label><label><input type="checkbox" value="4" />ה׳</label><label><input type="checkbox" value="5" />ו׳</label><label><input type="checkbox" value="6" />ש׳</label></div></fieldset>
