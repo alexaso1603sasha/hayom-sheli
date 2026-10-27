@@ -265,3 +265,19 @@ textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius
 .calendar-card{max-width:100%}
 .section-heading{flex-wrap:wrap}
 @media (max-width:720px){.calendar-card{padding:12px 8px}.calendar-weekdays,.calendar-grid{gap:4px}.calendar-day{min-height:46px;padding:0;border-radius:12px;font-size:.95rem}.calendar-dot{width:6px;height:6px}}
+
+/* v9: מלבנים אישיים */
+.panels-home{display:grid;gap:16px}
+.panel-card{background:#fff;border-top:4px solid var(--pc)}
+@supports (background:color-mix(in srgb,red 10%,white)){.panel-card{background:linear-gradient(180deg,color-mix(in srgb,var(--pc) 13%,#fff),#fff 75%);border-color:color-mix(in srgb,var(--pc) 35%,#fff);border-top-color:var(--pc)}}
+.panel-card .eyebrow{color:var(--muted)}
+.panel-add{position:relative;font-size:0;border:0;background:var(--pc);color:#fff;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12),0 4px 10px rgba(18,35,63,.15)}
+.panel-add::before,.panel-add::after{content:"";position:absolute;inset:0;margin:auto;width:16px;height:2.5px;background:currentColor;border-radius:2px}
+.panel-add::after{width:2.5px;height:16px}
+.type-switch{grid-template-columns:repeat(3,1fr)}
+.panel-field{display:none}
+#panel-color-input{width:44px!important;height:44px!important;min-height:44px!important;flex:0 0 44px!important;padding:0!important}
+.panel-name{flex:1;min-width:0}
+.delete-panel{width:30px;min-width:30px;height:30px;padding:0;flex:none;font-size:0;position:relative;background:#fff;border:1px solid var(--line);color:var(--muted);border-radius:50%}
+.delete-panel::before,.delete-panel::after{content:"";position:absolute;inset:0;margin:auto;width:11px;height:2px;border-radius:2px;background:currentColor;transform:rotate(45deg)}
+.delete-panel::after{transform:rotate(-45deg)}
