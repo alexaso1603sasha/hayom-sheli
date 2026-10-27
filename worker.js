@@ -174,6 +174,20 @@ async function handle(request, env) {
     return reply(env, { ok: true });
   }
 
+  if (url.pathname === '/api/test' && request.method === 'POST') {
+    let body; try { body = await request.json(); } catch (e) { return reply(env, { error: 'bad json' }, 400); }
+    if (!validCode(body.code)) return reply(env, { error: 'bad code' }, 400);
+    const subs = (await env.KV.get('s:' + body.code, 'json')) || [];
+    let ok = 0; const fail = [];
+    for (const sub of subs) {
+      try {
+        const res = await sendPush(sub, JSON.stringify({ title: 'בדיקת התראות', body: 'ההתראות מהשרת עובדות ✓', tag: 'test' }), env);
+        if (res.ok) ok++; else fail.push(res.status);
+      } catch (e) { fail.push('err'); }
+    }
+    return reply(env, { subs: subs.length, ok, fail });
+  }
+
   return reply(env, { ok: true, name: 'hayom-sheli-push' });
 }
 
