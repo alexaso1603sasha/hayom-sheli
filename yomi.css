@@ -281,3 +281,9 @@ textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius
 .delete-panel{width:30px;min-width:30px;height:30px;padding:0;flex:none;font-size:0;position:relative;background:#fff;border:1px solid var(--line);color:var(--muted);border-radius:50%}
 .delete-panel::before,.delete-panel::after{content:"";position:absolute;inset:0;margin:auto;width:11px;height:2px;border-radius:2px;background:currentColor;transform:rotate(45deg)}
 .delete-panel::after{transform:rotate(-45deg)}
+
+/* v10 */
+.refresh-button{color:var(--plum)}
+.refresh-button svg{display:block}
+.refresh-button.spin svg{animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}

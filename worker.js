@@ -1,5 +1,5 @@
-// שרת ההתראות של "היום שלי" - Cloudflare Worker (קובץ יחיד).
-// דורש: KV בשם KV, סודות VAPID_PUBLIC ו-VAPID_PRIVATE, משתנה VAPID_SUBJECT, וטריגר Cron כל דקה.
+// \u05e9\u05e8\u05ea \u05d4\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u05e9\u05dc "\u05d4\u05d9\u05d5\u05dd \u05e9\u05dc\u05d9" - Cloudflare Worker (\u05e7\u05d5\u05d1\u05e5 \u05d9\u05d7\u05d9\u05d3).
+// \u05d3\u05d5\u05e8\u05e9: KV \u05d1\u05e9\u05dd KV, \u05e1\u05d5\u05d3\u05d5\u05ea VAPID_PUBLIC \u05d5-VAPID_PRIVATE, \u05de\u05e9\u05ea\u05e0\u05d4 VAPID_SUBJECT, \u05d5\u05d8\u05e8\u05d9\u05d2\u05e8 Cron \u05db\u05dc \u05d3\u05e7\u05d4.
 
 const enc = new TextEncoder();
 const b64uToBytes = s => { s = s.replace(/-/g, '+').replace(/_/g, '/'); s += '='.repeat((4 - s.length % 4) % 4); return Uint8Array.from(atob(s), c => c.charCodeAt(0)); };
@@ -62,7 +62,7 @@ async function sendPush(sub, payloadText, env) {
   return fetch(sub.endpoint, { method: 'POST', headers, body });
 }
 
-/* ---------- לוגיקת תזכורות ---------- */
+/* ---------- \u05dc\u05d5\u05d2\u05d9\u05e7\u05ea \u05ea\u05d6\u05db\u05d5\u05e8\u05d5\u05ea ---------- */
 function addDays(dateStr, n) {
   const [y, m, d] = dateStr.split('-').map(Number);
   return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
@@ -81,7 +81,7 @@ function localNow(tz, at = new Date()) {
   };
 }
 
-// מחזירה את התזכורות שהגיע זמנן ועוד לא נשלחו. חלון של 5 דקות כדי לא לפספס אם ה-Cron התעכב.
+// \u05de\u05d7\u05d6\u05d9\u05e8\u05d4 \u05d0\u05ea \u05d4\u05ea\u05d6\u05db\u05d5\u05e8\u05d5\u05ea \u05e9\u05d4\u05d2\u05d9\u05e2 \u05d6\u05de\u05e0\u05df \u05d5\u05e2\u05d5\u05d3 \u05dc\u05d0 \u05e0\u05e9\u05dc\u05d7\u05d5. \u05d7\u05dc\u05d5\u05df \u05e9\u05dc 5 \u05d3\u05e7\u05d5\u05ea \u05db\u05d3\u05d9 \u05dc\u05d0 \u05dc\u05e4\u05e1\u05e4\u05e1 \u05d0\u05dd \u05d4-Cron \u05d4\u05ea\u05e2\u05db\u05d1.
 function findDue(data, now, sent) {
   const due = [];
   for (let off = 0; off < 3; off++) {
@@ -95,7 +95,7 @@ function findDue(data, now, sent) {
       if (Number.isNaN(h) || Number.isNaN(m)) continue;
       const at = dayB ? (off - 1) * 1440 + h * 60 + m : off * 1440 + h * 60 + m - Number(t.reminder);
       const id = `${t.id}|${date}`;
-      if (now.minutes >= at && now.minutes < at + 5 && !sent[id]) due.push({ id, title: String(t.title || ''), tag: `${t.id}-${date}`, detail: dayB ? `מחר${t.time ? ' בשעה ' + t.time : ''}` : (Number(t.reminder) ? `בעוד ${Number(t.reminder)} דקות` : `עכשיו · ${t.time}`) });
+      if (now.minutes >= at && now.minutes < at + 5 && !sent[id]) due.push({ id, title: String(t.title || ''), tag: `${t.id}-${date}`, detail: dayB ? `\u05de\u05d7\u05e8${t.time ? ' \u00b7 ' + t.time : ''}` : (Number(t.reminder) ? `\u05d1\u05e2\u05d5\u05d3 ${Number(t.reminder)} \u05d3\u05e7\u05f3` : '\u05e2\u05db\u05e9\u05d9\u05d5') });
     }
   }
   return due;
@@ -119,7 +119,7 @@ async function processUser(env, code) {
         const res = await sendPush(sub, payload, env);
         if (res.status === 404 || res.status === 410) gone.add(sub.endpoint);
         else if (res.ok) delivered = true;
-      } catch (e) { /* ננסה שוב בדקה הבאה */ }
+      } catch (e) { /* \u05e0\u05e0\u05e1\u05d4 \u05e9\u05d5\u05d1 \u05d1\u05d3\u05e7\u05d4 \u05d4\u05d1\u05d0\u05d4 */ }
     }
     if (delivered || gone.size === subs.length) sent[item.id] = now.date;
   }
@@ -181,7 +181,7 @@ async function handle(request, env) {
     let ok = 0; const fail = [];
     for (const sub of subs) {
       try {
-        const res = await sendPush(sub, JSON.stringify({ title: 'בדיקת התראות', body: 'ההתראות מהשרת עובדות ✓', tag: 'test' }), env);
+        const res = await sendPush(sub, JSON.stringify({ title: '\u05d1\u05d3\u05d9\u05e7\u05ea \u05d4\u05ea\u05e8\u05d0\u05d5\u05ea', body: '\u05d4\u05d4\u05ea\u05e8\u05d0\u05d5\u05ea \u05de\u05d4\u05e9\u05e8\u05ea \u05e2\u05d5\u05d1\u05d3\u05d5\u05ea \u2713', tag: 'test' }), env);
         if (res.ok) ok++; else fail.push(res.status);
       } catch (e) { fail.push('err'); }
     }
