@@ -188,7 +188,7 @@ async function handle(request, env) {
     return reply(env, { subs: subs.length, ok, fail });
   }
 
-  return reply(env, { ok: true, name: 'hayom-sheli-push' });
+  return reply(env, { ok: true, name: 'hayom-sheli-push', version: 4 });
 }
 
 export default {
