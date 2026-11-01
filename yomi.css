@@ -322,3 +322,26 @@ textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius
 .task-row[data-swipe=done]{background:#dff0ff}.task-row[data-swipe=delete]{background:#fde8e6}
 .file-button{display:grid;place-items:center;cursor:pointer}
 @media (max-width:720px){.week-view{grid-template-columns:1fr}.wk-day{flex-direction:row;min-height:0}.wk-head{flex:0 0 56px}}
+
+/* v12: עיצוב משימות, שבוע קומפקטי, בלי כרטיס שגרה */
+.content-grid:not(:has(.panel-card)){grid-template-columns:1fr}
+.task-row{background:var(--tbg,#fbfdff)}
+.task-row .task-name{justify-self:start;font-size:calc(1rem*var(--tsz,1));font-weight:var(--tw,600);background-image:linear-gradient(transparent 52%,var(--tmark,transparent) 52%);-webkit-box-decoration-break:clone;box-decoration-break:clone;padding:0 2px}
+.task-row.fmt-selected{outline:2px solid var(--plum);outline-offset:2px}
+.week-task{background:var(--tbg,#e4f0fc);padding:5px 8px;gap:6px;min-height:0;flex-wrap:nowrap;align-items:center;border-radius:10px;font-size:.85rem;line-height:1.25;width:100%}
+.week-task .group-dot{width:8px;height:8px;flex:0 0 8px}
+.week-task .wt-title{flex:1;min-width:0;overflow-wrap:break-word;font-weight:var(--tw,600);font-size:calc(.85rem*var(--tsz,1))}
+.week-task .wt-time{flex:none;margin:0;font-weight:700;font-size:.72rem;color:#1f5aa8;background:rgba(255,255,255,.75);padding:1px 7px;border-radius:999px}
+.week-tasks{gap:5px}
+.wk-task{background:var(--tbg,rgba(47,111,196,.08))}
+.wk-task .wk-time{display:block;font-style:normal;font-weight:700;font-size:.72rem;color:#1f5aa8;margin:0 0 1px}
+.wk-task bdi{display:block}
+.fmt-bar{position:fixed;right:0;top:50%;transform:translateY(-50%);z-index:35;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px 6px;background:rgba(255,255,255,.97);border:1px solid var(--line);border-right:0;border-radius:16px 0 0 16px;box-shadow:-6px 8px 24px rgba(18,35,63,.14);max-height:86vh}
+.fmt-btn{width:36px;height:36px;min-height:36px;padding:0;border-radius:50%;border:1px solid var(--line);background:#fff;display:grid;place-items:center;font-weight:700;font-size:.85rem;color:var(--ink)}
+.fmt-btn.active{background:var(--plum);border-color:var(--plum);color:#fff}
+.fmt-tools{display:grid;gap:8px;justify-items:center;overflow-y:auto;padding-bottom:2px}
+.fmt-swatches{display:grid;grid-template-columns:repeat(2,26px);gap:6px}
+.fmt-swatch{width:26px;height:26px;min-height:26px;padding:0;border-radius:50%;border:1px solid rgba(18,35,63,.22)}
+.fmt-swatch.none{background:linear-gradient(135deg,#fff 45%,#d6dfec 45%,#d6dfec 55%,#fff 55%)}
+.fmt-hint{margin:0;max-width:64px;font-size:.68rem;line-height:1.2;color:var(--muted);text-align:center;overflow-wrap:anywhere}
+@media (max-width:720px){body.fmt-open .app-shell{padding-right:76px}}

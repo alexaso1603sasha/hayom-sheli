@@ -34,6 +34,9 @@
 <symbol id="i-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
 <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
 <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+<symbol id="i-palette" viewBox="0 0 24 24"><circle cx="13.5" cy="6.5" r=".6"/><circle cx="17.5" cy="10.5" r=".6"/><circle cx="8.5" cy="7.5" r=".6"/><circle cx="6.5" cy="12.5" r=".6"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.5-.7 1.5-1.5 0-.4-.1-.7-.4-1-.3-.3-.4-.6-.4-1 0-.8.7-1.5 1.5-1.5H16c3.3 0 6-2.7 6-6 0-4.9-4.5-9-10-9z"/></symbol>
+<symbol id="i-marker" viewBox="0 0 24 24"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></symbol>
+<symbol id="i-undo" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
 </defs></svg>
 
     <main class="app-shell">
@@ -81,10 +84,6 @@
           </section>
           <aside class="side-stack">
             <div id="panels-home" class="panels-home"></div>
-            <section class="card recurring-card">
-              <div class="card-title-row"><div><p class="eyebrow">שגרה</p><h3>משימות קבועות</h3></div><button id="week-schedule-button" class="small-round" aria-label="פתיחת טבלת השבוע"><svg class="ic" aria-hidden="true"><use href="#i-up-right"/></svg></button></div>
-              <div id="recurring-preview" class="mini-list"></div>
-            </section>
           </aside>
         </div>
       </section>
@@ -113,7 +112,7 @@
         <label class="reminder-field">תזכורת <select id="reminder-input" name="reminder"><option value="none">ללא תזכורת</option><option value="0">בזמן המשימה</option><option value="5">5 דקות לפני</option><option value="15">15 דקות לפני</option><option value="30">30 דקות לפני</option><option value="60">שעה לפני</option><option value="day">יום לפני</option></select></label>
         <label id="remind-date-field" class="remind-date-field">תאריך התזכורת<input type="date" id="remind-date-input"></label>
         <div id="daybefore-field" class="daybefore-field"><span class="field-label">באיזו שעה ביום לפני?</span><div class="time-picker"><div id="rem-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="rem-minute-input" class="wheel" aria-label="דקות"></div></div></div>
-        <label class="panel-field">מלבן <select id="panel-input" name="panel"><option value="">ללא מלבן</option></select></label>
+        <label class="panel-field">פינה <select id="panel-input" name="panel"><option value="">ללא פינה</option></select></label>
         <label class="group-field">קבוצה <select id="group-input" name="group"></select></label>
         <fieldset id="repeat-days"><legend>באילו ימים?</legend><div class="weekday-pills"><label><input type="checkbox" value="0" />א׳</label><label><input type="checkbox" value="1" />ב׳</label><label><input type="checkbox" value="2" />ג׳</label><label><input type="checkbox" value="3" />ד׳</label><label><input type="checkbox" value="4" />ה׳</label><label><input type="checkbox" value="5" />ו׳</label><label><input type="checkbox" value="6" />ש׳</label></div></fieldset>
         <div class="dialog-actions"><button type="button" id="delete-from-dialog" class="delete-link" style="display:none">מחיקה</button><button type="button" class="secondary-button close-dialog">ביטול</button><button id="save-task" class="primary-button">שמירה</button></div>
@@ -127,15 +126,27 @@
       <button class="drawer-section" data-drawer-view="recurring"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-repeat"/></svg></span><span><strong>משימות קבועות</strong><small>עריכה של השגרה שלך</small></span></button>
       <button class="drawer-section" data-drawer-view="groups"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg></span><span><strong>קבוצות פעולות</strong><small>קטגוריות וצבעים</small></span></button>
       <button class="drawer-section" data-drawer-view="lists"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span><span><strong>רשימות</strong><small>קניות, רעיונות וכל מה שצריך</small></span></button>
-      <button class="drawer-section" data-drawer-view="panels"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-panel"/></svg></span><span><strong>מלבנים אישיים</strong><small>מלבנים בצבע ובשם שלך בעמוד הבית</small></span></button>
+      <button class="drawer-section" data-drawer-view="panels"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-panel"/></svg></span><span><strong>הפינות שלי</strong><small>פינות בצבע ובשם שלך בעמוד הבית</small></span></button>
       <button class="drawer-section" data-drawer-view="reminders"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span><span><strong>תזכורות</strong><small>הפעלה בטלפון ובמחשב</small></span></button>
       <section class="drawer-page" id="recurring-drawer"><div class="drawer-page-title"><div><p class="eyebrow">השגרה שלך</p><h3>טבלת השבוע</h3></div><button class="small-round add-task" data-type="recurring" aria-label="משימה קבועה חדשה">＋</button></div><p class="drawer-help">לחצי על יום כדי להוסיף אליו משימה קבועה, או על משימה קיימת כדי לערוך אותה.</p><div id="week-table" class="week-table"></div></section>
       <section class="drawer-page" id="groups-drawer"><div class="drawer-page-title"><h3>הקבוצות שלך</h3><button id="add-group" class="small-round" aria-label="קבוצה חדשה">＋</button></div><p class="drawer-help">אפשר להוסיף, לשנות צבע או למחוק קבוצה. משימות שכבר שויכו נשארות מסודרות.</p><div id="group-list" class="drawer-list"></div><form id="group-form" class="group-form"><input id="group-name-input" maxlength="30" placeholder="למשל: קניות" required /><input id="group-color-input" type="color" value="#6d5bd0" aria-label="צבע הקבוצה" /><button class="primary-button">הוספת קבוצה</button></form></section>
       <section class="drawer-page" id="lists-drawer"><div class="drawer-page-title"><div><p class="eyebrow">לא לשכוח</p><h3>הרשימות שלי</h3></div></div><p class="drawer-help">צרי רשימה, הוסיפי פריטים וסמני מה שכבר הושלם. רשימות מהירות מכפתור ״זריזה״ נשמרות כאן.</p><form id="list-form" class="group-form"><input id="list-name-input" maxlength="40" placeholder="שם רשימה חדשה, למשל: קניות" required /><button class="primary-button">יצירת רשימה</button></form><div id="lists-container" class="lists-grid"></div></section>
-      <section class="drawer-page" id="panels-drawer"><div class="drawer-page-title"><div><p class="eyebrow">העמוד שלך</p><h3>המלבנים שלי</h3></div></div><p class="drawer-help">כל מלבן מופיע בעמוד הבית. אפשר להוסיף לו משימות יומיות, קבועות וכלליות, ולשייך משימה למלבן בעת יצירתה.</p><form id="panel-form" class="group-form"><input id="panel-name-input" maxlength="30" placeholder="שם המלבן, למשל: עבודה" required /><input id="panel-color-input" type="color" value="#2f6fc4" aria-label="צבע המלבן" /><button class="primary-button">הוספת מלבן</button></form><div id="panel-list" class="drawer-list" style="margin-top:16px"></div></section>
+      <section class="drawer-page" id="panels-drawer"><div class="drawer-page-title"><div><p class="eyebrow">העמוד שלך</p><h3>הפינות שלי</h3></div></div><p class="drawer-help">כל פינה מופיעה בעמוד הבית. אפשר להוסיף לה משימות יומיות, קבועות וכלליות, ולשייך משימה לפינה בעת יצירתה.</p><form id="panel-form" class="group-form"><input id="panel-name-input" maxlength="30" placeholder="שם הפינה, למשל: עבודה" required /><input id="panel-color-input" type="color" value="#2f6fc4" aria-label="צבע הפינה" /><button class="primary-button">הוספת פינה</button></form><div id="panel-list" class="drawer-list" style="margin-top:16px"></div></section>
       <section class="drawer-page" id="reminders-drawer"><h3>תזכורות</h3><p class="drawer-help">לחצי על הכפתור ואשרי התראות. כשהאפליקציה פתוחה, התזכורות שהגדרת יוצגו במכשיר.</p><button id="drawer-notification-button" class="primary-button">הפעלת תזכורות</button>
       <button id="diag-button" class="secondary-button" type="button" style="margin-top:10px">בדיקת תזכורות</button><pre id="diag-result" class="diag-result"></pre>
       <div class="sync-box"><h3>גיבוי</h3><p class="drawer-help">שמירת עותק של כל המשימות, הרשימות והמלבנים בקובץ, ושחזור ממנו בכל מכשיר.</p><div class="sync-actions"><button id="export-button" type="button" class="secondary-button">ייצוא גיבוי</button><label class="secondary-button file-button">שחזור מקובץ<input id="import-input" type="file" accept="application/json,.json" hidden></label></div></div><div class="sync-box"><h3>סנכרון בין מכשירים</h3><p class="drawer-help">אותו קוד בטלפון ובמחשב = אותן משימות ואותן התראות, גם כשהאפליקציה סגורה. ב"קוד חדש" מייצרים קוד, ואת אותו הקוד מקלידים במכשיר השני.</p><input id="sync-code-input" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="קוד סנכרון" /><div class="sync-actions"><button id="sync-new-code" type="button" class="secondary-button">קוד חדש</button><button id="sync-save-code" type="button" class="primary-button">חיבור</button></div><p id="sync-status" class="notification-note"></p></div></section>
+    </aside>
+    <aside id="fmt-bar" class="fmt-bar" aria-label="עיצוב משימות">
+      <button id="fmt-toggle" class="fmt-btn" type="button" aria-label="עיצוב משימה" title="עיצוב משימה"><svg class="ic"><use href="#i-palette"/></svg></button>
+      <div id="fmt-tools" class="fmt-tools" hidden>
+        <p id="fmt-hint" class="fmt-hint">לחצי על משימה כדי לעצב אותה</p>
+        <div class="fmt-swatches"><button class="fmt-swatch none" data-bg="" aria-label="בלי צבע"></button><button class="fmt-swatch" data-bg="#eaf4ff" style="background:#eaf4ff" aria-label="תכלת"></button><button class="fmt-swatch" data-bg="#cfe3ff" style="background:#cfe3ff" aria-label="כחול בהיר"></button><button class="fmt-swatch" data-bg="#d9f3e6" style="background:#d9f3e6" aria-label="ירוק"></button><button class="fmt-swatch" data-bg="#fff1c4" style="background:#fff1c4" aria-label="צהוב"></button><button class="fmt-swatch" data-bg="#fde0dc" style="background:#fde0dc" aria-label="ורוד"></button><button class="fmt-swatch" data-bg="#e6e0fa" style="background:#e6e0fa" aria-label="סגלגל"></button></div>
+        <button class="fmt-btn" data-fmt="mark" aria-label="מרקר" title="מרקר (לחיצה נוספת מחליפה צבע)"><svg class="ic"><use href="#i-marker"/></svg></button>
+        <button class="fmt-btn" data-fmt="bigger" aria-label="הגדלת כתב" title="הגדלת כתב">A+</button>
+        <button class="fmt-btn" data-fmt="smaller" aria-label="הקטנת כתב" title="הקטנת כתב">A-</button>
+        <button class="fmt-btn" data-fmt="bold" aria-label="כתב בולט" title="כתב בולט"><b>B</b></button>
+        <button class="fmt-btn" data-fmt="reset" aria-label="איפוס עיצוב" title="איפוס עיצוב"><svg class="ic"><use href="#i-undo"/></svg></button>
+      </div>
     </aside>
     <div id="toast" class="toast" role="status"></div>
     <script src="app.js"></script>
