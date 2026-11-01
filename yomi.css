@@ -345,3 +345,19 @@ textarea{width:100%;padding:12px 14px;border:1px solid var(--line);border-radius
 .fmt-swatch.none{background:linear-gradient(135deg,#fff 45%,#d6dfec 45%,#d6dfec 55%,#fff 55%)}
 .fmt-hint{margin:0;max-width:64px;font-size:.68rem;line-height:1.2;color:var(--muted);text-align:center;overflow-wrap:anywhere}
 @media (max-width:720px){body.fmt-open .app-shell{padding-right:76px}}
+
+/* v13: סרגל עיצוב נוח יותר */
+.fmt-bar{z-index:60;padding:8px}
+.fmt-tools{gap:6px;width:84px}
+.fmt-label{margin:4px 0 0;font-size:.7rem;font-weight:700;color:var(--muted);align-self:flex-start}
+.fmt-swatches{grid-template-columns:repeat(3,22px);gap:6px;justify-content:center}
+.fmt-swatch{width:22px;height:22px;min-height:22px}
+input[type=color].fmt-custom{width:22px;height:22px;min-height:22px;padding:0;border:1px solid rgba(18,35,63,.3);background:conic-gradient(red,yellow,lime,aqua,blue,magenta,red)}
+input[type=color].fmt-custom::-webkit-color-swatch{opacity:0}
+input[type=color].fmt-custom::-moz-color-swatch{opacity:0}
+.fmt-row{display:flex;gap:6px}
+.fmt-hint{max-width:84px}
+.week-task.fmt-selected,.wk-task.fmt-selected{outline:2px solid var(--plum);outline-offset:1px}
+.wt-title,.wk-task bdi{background-image:linear-gradient(transparent 52%,var(--tmark,transparent) 52%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
+.wk-task{font-weight:var(--tw,400);font-size:calc(.8rem*var(--tsz,1))}
+body.fmt-open .fmt-bar{box-shadow:-6px 8px 28px rgba(18,35,63,.24)}

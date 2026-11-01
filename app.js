@@ -254,7 +254,7 @@ function renderWeekView(){
   if(!week)return;
   const start=startOfWeek(selectedDate),end=new Date(start);end.setDate(end.getDate()+6);
   $('#month-title').textContent=`${start.getDate()} ${months[start.getMonth()]} - ${end.getDate()} ${months[end.getMonth()]}`;
-  box.innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const list=sorted(tasks.filter(t=>taskOnDate(t,d)));return `<button class="wk-day ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="wk-head"><small>${days[i].replace('יום ','')}</small><strong>${d.getDate()}</strong></span><span class="wk-tasks">${list.length?list.map(t=>`<span class="wk-task ${doneOn(t,d)?'done':''}" style="--gc:${getGroup(t)?.color||'#9db8d8'}${(fmtAttr(t).match(/--tbg:[^;"]+/)||[''])[0]?';'+fmtAttr(t).match(/--tbg:[^;"]+/)[0]:''}">${t.time?`<em class="wk-time" dir="ltr">${t.time}</em>`:''}<bdi>${escapeHtml(t.title)}</bdi></span>`).join(''):'<span class="wk-empty">פנוי</span>'}</span></button>`;}).join('');
+  box.innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const list=sorted(tasks.filter(t=>taskOnDate(t,d)));return `<button class="wk-day ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="wk-head"><small>${days[i].replace('יום ','')}</small><strong>${d.getDate()}</strong></span><span class="wk-tasks">${list.length?list.map(t=>`<span class="wk-task ${doneOn(t,d)?'done':''}" data-id="${t.id}" style="--gc:${getGroup(t)?.color||'#9db8d8'}${fmtVars(t)?';'+fmtVars(t):''}">${t.time?`<em class="wk-time" dir="ltr">${t.time}</em>`:''}<bdi>${escapeHtml(t.title)}</bdi></span>`).join(''):'<span class="wk-empty">פנוי</span>'}</span></button>`;}).join('');
 }
 $('#cal-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;calMode=b.dataset.mode;render();});
 document.addEventListener('click',e=>{const wd=e.target.closest('.wk-day');if(!wd)return;selectedDate=parseDate(wd.dataset.date);calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();$('#day-dialog').showModal();});
@@ -270,14 +270,15 @@ renderWeekView();
 
 /* סרגל עיצוב משימות: צבע, מרקר, גודל וכתב בולט */
 const MARKS=['','#ffe58a','#bff0d4','#ffc9d4'];
-function fmtAttr(t){const f=t.fmt;if(!f)return '';const col=v=>/^#[0-9a-f]{3,8}$/i.test(v||'')?v:'',v=[col(f.bg)&&`--tbg:${col(f.bg)}`,Number(f.size)>0&&`--tsz:${Math.min(1.6,Math.max(.8,Number(f.size)))}`,f.bold&&'--tw:800',col(f.mark)&&`--tmark:${col(f.mark)}`].filter(Boolean).join(';');return v?` style="${v}"`:'';}
-function applyFmtSelection(){$$('.task-row').forEach(r=>r.classList.toggle('fmt-selected',fmtOn&&r.dataset.id===fmtSel));const t=tasks.find(x=>x.id===fmtSel);$('#fmt-hint').textContent=fmtOn&&t?t.title:'לחצי על משימה כדי לעצב אותה';}
+function fmtVars(t){const f=t.fmt;if(!f)return '';const col=v=>/^#[0-9a-f]{3,8}$/i.test(v||'')?v:'';return [col(f.bg)&&`--tbg:${col(f.bg)}`,Number(f.size)>0&&`--tsz:${Math.min(1.6,Math.max(.8,Number(f.size)))}`,f.bold&&'--tw:800',col(f.mark)&&`--tmark:${col(f.mark)}`].filter(Boolean).join(';');}
+function fmtAttr(t){const v=fmtVars(t);return v?` style="${v}"`:'';}
+function applyFmtSelection(){const idOf=r=>r.dataset.id||r.dataset.editId;$$('.task-row,.week-task,.wk-task').forEach(r=>r.classList.toggle('fmt-selected',fmtOn&&idOf(r)===fmtSel));const t=tasks.find(x=>x.id===fmtSel);$('#fmt-hint').textContent=fmtOn&&t?t.title:'לחצי על משימה כדי לעצב אותה';}
 function fmtApply(kind,val){
   const t=tasks.find(x=>x.id===fmtSel);if(!t){showToast('בחרי קודם משימה בלחיצה עליה');return;}
   const f={...(t.fmt||{})};
   if(kind==='reset'){delete t.fmt;save();render();return;}
   if(kind==='bg')f.bg=val||'';
-  else if(kind==='mark')f.mark=MARKS[(MARKS.indexOf(f.mark||'')+1)%MARKS.length];
+  else if(kind==='mark')f.mark=val||'';
   else if(kind==='bigger')f.size=Math.min(1.6,+((f.size||1)+.1).toFixed(2));
   else if(kind==='smaller')f.size=Math.max(.8,+((f.size||1)-.1).toFixed(2));
   else if(kind==='bold')f.bold=!f.bold;
@@ -287,6 +288,7 @@ function fmtApply(kind,val){
   save();render();
 }
 $('#fmt-toggle').addEventListener('click',()=>{fmtOn=!fmtOn;$('#fmt-tools').hidden=!fmtOn;$('#fmt-bar').classList.toggle('open',fmtOn);$('#fmt-toggle').classList.toggle('active',fmtOn);document.body.classList.toggle('fmt-open',fmtOn);if(!fmtOn)fmtSel=null;applyFmtSelection();});
-$('#fmt-tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.bg!==undefined)fmtApply('bg',b.dataset.bg);else if(b.dataset.fmt)fmtApply(b.dataset.fmt);});
-document.addEventListener('click',e=>{if(!fmtOn)return;const row=e.target.closest('.task-row');if(!row||e.target.closest('button,input'))return;e.stopImmediatePropagation();fmtSel=row.dataset.id;applyFmtSelection();},true);
+$('#fmt-tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.bg!==undefined)fmtApply('bg',b.dataset.bg);else if(b.dataset.mark!==undefined)fmtApply('mark',b.dataset.mark);else if(b.dataset.fmt)fmtApply(b.dataset.fmt);});
+$('#fmt-tools').addEventListener('change',e=>{if(e.target.matches('.fmt-custom'))fmtApply(e.target.dataset.custom,e.target.value);});
+document.addEventListener('click',e=>{if(!fmtOn)return;if(e.target.closest('input,.fmt-bar'))return;const el=e.target.closest('.task-row,.week-task,.wk-task');if(!el)return;e.preventDefault();e.stopImmediatePropagation();fmtSel=el.dataset.id||el.dataset.editId;applyFmtSelection();},true);
 applyFmtSelection();
