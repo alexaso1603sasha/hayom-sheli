@@ -158,7 +158,7 @@ async function handle(request, env) {
     if (text.length > 400000) return reply(env, { error: 'too large' }, 413);
     let body; try { body = JSON.parse(text); } catch (e) { return reply(env, { error: 'bad json' }, 400); }
     if (!validCode(body.code) || !Array.isArray(body.tasks) || !Array.isArray(body.groups)) return reply(env, { error: 'bad data' }, 400);
-    await env.KV.put('d:' + body.code, JSON.stringify({ tasks: body.tasks, groups: body.groups, lists: Array.isArray(body.lists) ? body.lists : [], panels: Array.isArray(body.panels) ? body.panels : [], tz: String(body.tz || 'UTC'), updatedAt: Number(body.updatedAt) || Date.now() }));
+    await env.KV.put('d:' + body.code, JSON.stringify({ tasks: body.tasks, groups: body.groups, lists: Array.isArray(body.lists) ? body.lists : [], panels: Array.isArray(body.panels) ? body.panels : [], tomb: (body.tomb && typeof body.tomb === 'object' && !Array.isArray(body.tomb)) ? body.tomb : {}, tz: String(body.tz || 'UTC'), updatedAt: Number(body.updatedAt) || Date.now() }));
     const idx = (await env.KV.get('idx', 'json')) || [];
     if (!idx.includes(body.code)) { idx.push(body.code); await env.KV.put('idx', JSON.stringify(idx)); }
     return reply(env, { ok: true });
@@ -188,7 +188,7 @@ async function handle(request, env) {
     return reply(env, { subs: subs.length, ok, fail });
   }
 
-  return reply(env, { ok: true, name: 'hayom-sheli-push', version: 4 });
+  return reply(env, { ok: true, name: 'hayom-sheli-push', version: 5 });
 }
 
 export default {

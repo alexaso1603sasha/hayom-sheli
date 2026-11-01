@@ -10,7 +10,7 @@ const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parseDate = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
 let today = new Date(); today.setHours(0, 0, 0, 0);
-let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null;
+let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month';
 let selectedDate = new Date(today), calendarDate = new Date(today.getFullYear(), today.getMonth(), 1), dialogDate = new Date(today), modalType = 'dated', editingTaskId = null, timeoutIds = [];
 
 const sample = [
@@ -28,7 +28,7 @@ const STALE_DAYS = 0; // אחרי כמה ימים משימה כללית שלא �
 {tasks=tasks.filter(t=>!(t.type==='general'&&t.done?.general&&t.doneAt&&Date.now()-t.doneAt>30*864e5));let m=false;tasks.forEach(t=>{if(t.type==='general'&&!t.createdAt){t.createdAt=Date.now();m=true;}if(t.type==='general'&&t.done?.general&&!t.doneAt){t.doneAt=Date.now();m=true;}});if(m)localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));}
 {const map={'#6d5bd0':'#2f6fc4','#3d3152':'#2f6fc4','#1d4f91':'#2f6fc4','#e47695':'#13b5c9','#b8924a':'#13b5c9','#4aa3e8':'#13b5c9','#d59b31':'#8b7cf0','#8c7fa6':'#8b7cf0','#8a9bb8':'#8b7cf0'};let g2=false;groups.forEach(g=>{const n=map[g.color];if(n){g.color=n;g2=true;}});if(g2)localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));}
 
-function save(){localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));localStorage.setItem('hayom-sheli-lists',JSON.stringify(lists));localStorage.setItem('hayom-sheli-panels',JSON.stringify(panels));localStorage.setItem('hayom-sheli-updated',String(Date.now()));scheduleReminders();queueSync();}
+function save(){stampItems();localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));localStorage.setItem('hayom-sheli-lists',JSON.stringify(lists));localStorage.setItem('hayom-sheli-panels',JSON.stringify(panels));localStorage.setItem('hayom-sheli-updated',String(Date.now()));scheduleReminders();queueSync();}
 function taskOnDate(task,date){return task.type==='dated'?task.date===iso(date):task.type==='recurring'&&task.days.includes(date.getDay())&&!task.skip?.[iso(date)];}
 function doneOn(task,date){return !!task.done?.[iso(date)];}
 function setDone(task,date,value){task.done ||= {};task.done[iso(date)]=value;save();render();}
@@ -38,11 +38,11 @@ function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&am
 function getGroup(task){return groups.find(g=>g.id===task.group);}
 function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date);return `<div class="task-row ${done?'done':''}" data-id="${task.id}"><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span></div>${task.time?`<span class="task-time">${task.time}</span>`:''}<button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div>`;}
 function renderDateStrip(){const holder=$('#date-strip');holder.innerHTML='';for(let i=-3;i<=5;i++){const d=new Date(today);d.setDate(today.getDate()+i);holder.insertAdjacentHTML('beforeend',`<button class="date-pill ${iso(d)===iso(selectedDate)?'selected':''} ${iso(d)===iso(today)?'today':''}" data-date="${iso(d)}"><span>${shortDays[d.getDay()]}</span><strong>${d.getDate()}</strong></button>`);}}
-function renderToday(){const list=sorted(tasks.filter(t=>taskOnDate(t,selectedDate))),complete=list.filter(t=>doneOn(t,selectedDate)).length;$('#schedule-title').textContent=iso(selectedDate)===iso(today)?'היום':dateName(selectedDate);$('#daily-progress').textContent=list.length?`${complete} מתוך ${list.length} הושלמו`:'יום פנוי';$('#daily-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין כאן עדיין משימות. יום נעים ומרווח ✨</div>';const pending=sorted(list.filter(t=>!doneOn(t,selectedDate))),nowD=new Date(),nowHM=`${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`,upcoming=iso(selectedDate)===iso(today)?pending.filter(t=>!t.time||t.time>=nowHM):pending,next=upcoming[0],overdue=pending.length-upcoming.length;$('#next-task').innerHTML=next?`<strong>${escapeHtml(next.title)}</strong><span>${next.time||'ללא שעה'}${next.type==='recurring'?' · משימה קבועה':''}</span>`:pending.length?`<strong>אין עוד משימות להמשך היום</strong><span>${overdue} ${overdue===1?'משימה שעברה שעתה ממתינה':'משימות שעברה שעתן ממתינות'} לסימון</span>`:'<strong>סיימת הכול להיום ✨</strong><span>זמן לנשום קצת.</span>';const recurring=tasks.filter(t=>t.type==='recurring').slice(0,4);$('#recurring-preview').innerHTML=recurring.length?recurring.map(t=>`<div class="mini-row"><strong>${escapeHtml(t.title)}</strong><span>${t.time||'ללא שעה'}</span></div>`).join(''):'<div class="empty-state">עוד אין משימות קבועות.</div>';}
-function renderGeneral(){const list=tasks.filter(t=>t.type==='general');$('#general-tasks').innerHTML=list.length?list.map(t=>taskRow(t,null,true)).join(''):'<div class="empty-state">רשמי כאן כל דבר שתרצי לזכור, בלי להתחייב לתאריך.</div>';}
+function renderToday(){const dayAll=sorted(tasks.filter(t=>taskOnDate(t,selectedDate))),list=dayAll.filter(t=>!t.panel),complete=list.filter(t=>doneOn(t,selectedDate)).length;$('#schedule-title').textContent=iso(selectedDate)===iso(today)?'היום':dateName(selectedDate);$('#daily-progress').textContent=list.length?`${complete} מתוך ${list.length} הושלמו`:'יום פנוי';$('#daily-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין כאן עדיין משימות. יום נעים ומרווח ✨</div>';const pending=sorted(dayAll.filter(t=>!doneOn(t,selectedDate))),nowD=new Date(),nowHM=`${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`,upcoming=iso(selectedDate)===iso(today)?pending.filter(t=>!t.time||t.time>=nowHM):pending,next=upcoming[0],overdue=pending.length-upcoming.length;$('#next-task').innerHTML=next?`<strong>${escapeHtml(next.title)}</strong><span>${next.time||'ללא שעה'}${next.type==='recurring'?' · משימה קבועה':''}</span>`:pending.length?`<strong>אין עוד משימות להמשך היום</strong><span>${overdue} ${overdue===1?'משימה שעברה שעתה ממתינה':'משימות שעברה שעתן ממתינות'} לסימון</span>`:'<strong>סיימת הכול להיום ✨</strong><span>זמן לנשום קצת.</span>';const recurring=tasks.filter(t=>t.type==='recurring').slice(0,4);$('#recurring-preview').innerHTML=recurring.length?recurring.map(t=>`<div class="mini-row"><strong>${escapeHtml(t.title)}</strong><span>${t.time||'ללא שעה'}</span></div>`).join(''):'<div class="empty-state">עוד אין משימות קבועות.</div>';}
+function renderGeneral(){const list=tasks.filter(t=>t.type==='general'&&!t.panel);$('#general-tasks').innerHTML=list.length?list.map(t=>taskRow(t,null,true)).join(''):'<div class="empty-state">רשמי כאן כל דבר שתרצי לזכור, בלי להתחייב לתאריך.</div>';}
 function renderCalendar(){const y=calendarDate.getFullYear(),m=calendarDate.getMonth();$('#month-title').textContent=`${months[m]} ${y}`;const first=new Date(y,m,1),start=first.getDay(),last=new Date(y,m+1,0).getDate(),previous=new Date(y,m,0).getDate();let cells='';for(let i=0;i<42;i++){const number=i<start?previous-start+i+1:i>=start+last?i-start-last+1:i-start+1,current=i>=start&&i<start+last,d=new Date(y,current?m:(i<start?m-1:m+1),number),dayTasks=tasks.filter(t=>taskOnDate(t,d)),amount=dayTasks.length;cells+=`<button class="calendar-day ${current?'':'muted'} ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="day-number">${number}</span>${amount?`<span class="calendar-dots">${[...new Set(dayTasks.map(t=>getGroup(t)?.color||'#9db8d8'))].slice(0,3).map(col=>`<i class="calendar-dot" style="background:${col}"></i>`).join('')}</span>`:''}</button>`;}$('#calendar-grid').innerHTML=cells;const list=sorted(tasks.filter(t=>taskOnDate(t,selectedDate)));$('#calendar-day-title').textContent=dateName(selectedDate);$('#calendar-day-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין משימות ביום הזה עדיין. אפשר להוסיף אחת כאן.</div>';}
 function renderDrawer(){const week=days.map((day,index)=>{const list=sorted(tasks.filter(t=>t.type==='recurring'&&t.days.includes(index)));return `<section class="week-day"><button class="week-day-head" data-week-day="${index}"><strong>${day}</strong><span>＋ הוספה</span></button><div class="week-tasks">${list.length?list.map(t=>`<button class="week-task" data-edit-id="${t.id}" data-edit-day="${index}"><i class="group-dot" style="--group-color:${getGroup(t)?.color||'#9db8d8'}"></i>${escapeHtml(t.title)}<small>${t.time||''}</small></button>`).join(''):'<div class="week-empty">אין משימות קבועות</div>'}</div></section>`;}).join('');$('#week-table').innerHTML=week;$('#group-list').innerHTML=groups.length?groups.map(g=>`<div class="group-row" data-group-id="${g.id}"><input class="group-color" type="color" value="${g.color}" aria-label="צבע ${escapeHtml(g.name)}"><span>${escapeHtml(g.name)}</span><small>${tasks.filter(t=>t.group===g.id).length} משימות</small><button class="delete-group" aria-label="מחיקת ${escapeHtml(g.name)}">×</button></div>`).join(''):'<div class="empty-state">הוסיפי קבוצה ראשונה.</div>';}
-function render(){renderDateStrip();renderToday();renderGeneral();renderCalendar();renderDrawer();renderLists();renderPanels();renderNudge();}
+function render(){renderDateStrip();renderToday();renderGeneral();renderCalendar();renderWeekView();renderDrawer();renderLists();renderPanels();renderNudge();}
 function showToast(text){const toast=$('#toast');toast.textContent=text;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),2500);}
 function fillGroups(selected=''){$('#group-input').innerHTML='<option value="">ללא קבוצה</option>'+groups.map(g=>`<option value="${g.id}" ${g.id===selected?'selected':''}>${escapeHtml(g.name)}</option>`).join('');}
 function fillTime(value='',remind='20:00'){const items=n=>'<div data-v="">--</div>'+Array.from({length:n},(_,i)=>{const v=String(i).padStart(2,'0');return `<div data-v="${v}">${v}</div>`;}).join('');for(const [p,val] of [['task',value],['rem',remind]]){const [h,m]=val?val.split(':'):['',''];$(`#${p}-hour-input`).innerHTML=items(24);$(`#${p}-minute-input`).innerHTML=items(60);$(`#${p}-hour-input`).value=h;$(`#${p}-minute-input`).value=m;}}
@@ -70,18 +70,25 @@ const tzName=()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'
 function syncStatus(text){const el=$('#sync-status');if(el)el.textContent=text;}
 async function api(path,options={}){const res=await fetch(API_BASE+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});if(!res.ok)throw new Error('http-'+res.status);return res.json();}
 function queueSync(){if(!API_BASE||!getCode())return;clearTimeout(syncTimer);syncTimer=setTimeout(pushData,800);}
-async function pushData(){try{await api('/api/sync',{method:'PUT',body:JSON.stringify({code:getCode(),tasks,groups,lists,panels,tz:tzName(),updatedAt:Number(localStorage.getItem(updatedKey)||Date.now())})});syncStatus('מסונכרן ✓');return true;}catch(e){syncStatus('הסנכרון נכשל. ננסה שוב בשמירה הבאה');return false;}}
+async function putData(){await api('/api/sync',{method:'PUT',body:JSON.stringify({code:getCode(),tasks,groups,lists,panels,tomb:getTomb(),tz:tzName(),updatedAt:Number(localStorage.getItem(updatedKey)||Date.now())})});}
+async function pushData(){try{const d=await api('/api/sync?code='+encodeURIComponent(getCode()));if(d&&d.tomb!==undefined&&d.updatedAt&&Number(localStorage.getItem(updatedKey)||0)){const before=JSON.stringify(cols());mergeIn(d);if(before!==JSON.stringify(cols())){scheduleReminders();render();}}await putData();syncStatus('מסונכרן ✓');return true;}catch(e){syncStatus('הסנכרון נכשל. ננסה שוב בשמירה הבאה');return false;}}
 async function pullData(){
   if(!API_BASE||!getCode())return 'off';
   try{
     const data=await api('/api/sync?code='+encodeURIComponent(getCode()));
     if(!data||!data.updatedAt)return 'empty';
-    if(data.updatedAt>Number(localStorage.getItem(updatedKey)||0)){
-      tasks=data.tasks||[];groups=data.groups||defaultGroups;if(Array.isArray(data.lists)){lists=data.lists;localStorage.setItem('hayom-sheli-lists',JSON.stringify(lists));}if(Array.isArray(data.panels)){panels=data.panels;localStorage.setItem('hayom-sheli-panels',JSON.stringify(panels));}
-      localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));localStorage.setItem(updatedKey,String(data.updatedAt));
-      scheduleReminders();render();return 'applied';
+    const localUpdated=Number(localStorage.getItem(updatedKey)||0);
+    if(data.tomb===undefined||!localUpdated){
+      if(data.updatedAt<=localUpdated)return 'same';
+      adoptData(data);return 'applied';
     }
-    return 'same';
+    const before=JSON.stringify(cols());
+    mergeIn(data);
+    const after=JSON.stringify(cols());
+    localStorage.setItem(updatedKey,String(Math.max(localUpdated,data.updatedAt)));
+    if(before!==after){scheduleReminders();render();}
+    if(JSON.stringify({tasks:data.tasks||[],groups:data.groups||[],lists:data.lists||[],panels:data.panels||[]})!==after)await putData();
+    return before!==after?'applied':'same';
   }catch(e){return 'error';}
 }
 function b64ToBytes(b64){const pad='='.repeat((4-b64.length%4)%4),raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
@@ -165,7 +172,7 @@ document.addEventListener('click',e=>{const t=e.target;if(t.closest('#delete-all
 function openDrawerPage(view){const d=$('#action-drawer');d.classList.add('turn');setTimeout(()=>{switchDrawer(view);void d.offsetWidth;d.classList.remove('turn');},260);}
 function pruneDone(){const n=tasks.length;tasks=tasks.filter(t=>!(t.type==='general'&&t.done?.general&&t.doneAt&&Date.now()-t.doneAt>30*864e5));if(tasks.length!==n){save();render();}}
 let hiddenAt=0;
-function onResume(){refreshToday();if(hiddenAt&&Date.now()-hiddenAt>600000){selectedDate=new Date(today);calendarDate=new Date(today.getFullYear(),today.getMonth(),1);render();}$('#today-label').textContent=dateName(today);pruneDone();hiddenAt=0;}
+function onResume(){refreshToday();if(hiddenAt&&Date.now()-hiddenAt>600000){selectedDate=new Date(today);calendarDate=new Date(today.getFullYear(),today.getMonth(),1);render();}$('#today-label').textContent=dateName(today);pruneDone();hiddenAt=0;refreshPushState();}
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')hiddenAt=Date.now();else onResume();});
 window.addEventListener('pageshow',onResume);
 setInterval(pruneDone,3600000);
@@ -182,7 +189,7 @@ document.addEventListener('submit',e=>{if(e.target.id==='quick-form'){e.preventD
 function setDialogType(type){modalType=type;$('#repeat-days').style.display=type==='recurring'?'block':'none';$('.date-field').style.display=type==='dated'?'grid':'none';$('#dialog-kind').textContent=type==='recurring'?'שגרה קבועה':type==='general'?'רשימה כללית':'ליום מסוים';$('#dialog-title').textContent=editingTaskId?'עריכת משימה':type==='recurring'?'משימה קבועה חדשה':type==='general'?'משימה כללית חדשה':'משימה חדשה';$$('#type-switch button').forEach(b=>b.classList.toggle('active',b.dataset.type===type));if(type==='recurring'&&!$$('#repeat-days input:checked').length){const box=$(`#repeat-days input[value="${selectedDate.getDay()}"]`);if(box)box.checked=true;}toggleDayBefore();}
 $('#type-switch').addEventListener('click',e=>{const b=e.target.closest('button');if(b)setDialogType(b.dataset.type);});
 setInterval(renderToday,30000);
-async function refreshPushState(){try{if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)){localStorage.removeItem('hayom-sheli-push');scheduleReminders();return;}const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!(sub&&Notification.permission==='granted'&&getCode()))localStorage.removeItem('hayom-sheli-push');scheduleReminders();}catch(e){}}
+async function refreshPushState(){try{if(!('serviceWorker'in navigator)||!('PushManager'in window)||!('Notification'in window)){localStorage.removeItem('hayom-sheli-push');scheduleReminders();return;}const reg=await navigator.serviceWorker.ready,sub=await reg.pushManager.getSubscription();if(!(sub&&Notification.permission==='granted'&&getCode()))localStorage.removeItem('hayom-sheli-push');if(API_BASE&&getCode()&&Notification.permission==='granted')await subscribePush();scheduleReminders();}catch(e){}}
 async function diagnose(){const out=$('#diag-result'),lines=[],add=(ok,t)=>lines.push(`${ok?'✓':'✗'} ${t}`),show=()=>{out.textContent=lines.join('\n');};
   const hasN='Notification'in window;add(hasN&&Notification.permission==='granted',hasN?'התראות מאושרות במכשיר':'הדפדפן לא תומך בהתראות (באייפון צריך להתקין למסך הבית ולפתוח משם)');
   let reg=null,sub=null;try{reg='serviceWorker'in navigator?await navigator.serviceWorker.getRegistration():null;sub=reg&&reg.pushManager?await reg.pushManager.getSubscription():null;}catch(e){}
@@ -217,3 +224,46 @@ async function refreshApp(){
 }
 $('#refresh-button').addEventListener('click',refreshApp);
 setInterval(()=>{if(document.visibilityState==='visible')pullData();},60000);
+
+/* מיזוג סנכרון: כל פריט נושא זמן עדכון, ומחיקות נשמרות כ"מצבות" כדי שלא יחזרו */
+function cols(){return {tasks,groups,lists,panels};}
+function getTomb(){try{return JSON.parse(localStorage.getItem('hayom-sheli-tomb')||'{}');}catch(e){return {};}}
+function snapOf(){const out={};for(const [c,arr] of Object.entries(cols()))for(const it of arr)out[c+':'+it.id]=JSON.stringify({...it,u:0});return out;}
+function stampItems(){const raw=localStorage.getItem('hayom-sheli-snap'),next=snapOf();if(raw){const snap=JSON.parse(raw),tomb=getTomb(),now=Date.now();for(const [c,arr] of Object.entries(cols()))for(const it of arr)if(snap[c+':'+it.id]!==next[c+':'+it.id])it.u=now;for(const k of Object.keys(snap))if(!(k in next))tomb[k]=now;localStorage.setItem('hayom-sheli-tomb',JSON.stringify(tomb));}localStorage.setItem('hayom-sheli-snap',JSON.stringify(next));}
+function persistAll(){localStorage.setItem('hayom-sheli-tasks',JSON.stringify(tasks));localStorage.setItem('hayom-sheli-groups',JSON.stringify(groups));localStorage.setItem('hayom-sheli-lists',JSON.stringify(lists));localStorage.setItem('hayom-sheli-panels',JSON.stringify(panels));}
+function adoptData(d){tasks=d.tasks||[];groups=d.groups&&d.groups.length?d.groups:defaultGroups;lists=d.lists||[];panels=d.panels||[];if(d.tomb)localStorage.setItem('hayom-sheli-tomb',JSON.stringify(d.tomb));persistAll();localStorage.setItem(updatedKey,String(d.updatedAt||Date.now()));localStorage.setItem('hayom-sheli-snap',JSON.stringify(snapOf()));scheduleReminders();render();}
+function mergeIn(data){
+  const tomb=getTomb();for(const [k,v] of Object.entries(data.tomb||{}))tomb[k]=Math.max(tomb[k]||0,v);
+  const cutoff=Date.now()-60*864e5;for(const k of Object.keys(tomb))if(tomb[k]<cutoff)delete tomb[k];
+  const local=cols(),out={};
+  for(const c of ['tasks','groups','lists','panels']){const map=new Map(local[c].map(it=>[it.id,it]));for(const it of data[c]||[]){const cur=map.get(it.id);if(!cur||(it.u||0)>(cur.u||0))map.set(it.id,it);}out[c]=[...map.values()].filter(it=>!(tomb[c+':'+it.id]>(it.u||0)));}
+  tasks=out.tasks;groups=out.groups.length?out.groups:defaultGroups;lists=out.lists;panels=out.panels;
+  localStorage.setItem('hayom-sheli-tomb',JSON.stringify(tomb));persistAll();localStorage.setItem('hayom-sheli-snap',JSON.stringify(snapOf()));
+}
+if(!localStorage.getItem('hayom-sheli-snap'))localStorage.setItem('hayom-sheli-snap',JSON.stringify(snapOf()));
+
+/* גיבוי */
+$('#export-button').addEventListener('click',()=>{const blob=new Blob([JSON.stringify({v:1,tasks,groups,lists,panels,tomb:getTomb(),at:new Date().toISOString()})],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`yomi-backup-${iso(today)}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);});
+$('#import-input').addEventListener('change',async e=>{const f=e.target.files[0];if(!f)return;try{const d=JSON.parse(await f.text());if(!Array.isArray(d.tasks)||!Array.isArray(d.groups))throw new Error('bad');if(!confirm('לשחזר מהגיבוי? המידע שבמכשיר הזה יוחלף.'))return;tasks=d.tasks;groups=d.groups;lists=d.lists||[];panels=d.panels||[];const now=Date.now();[tasks,groups,lists,panels].forEach(a=>a.forEach(it=>{it.u=now;}));save();render();showToast('שוחזר מהגיבוי');}catch(err){showToast('קובץ הגיבוי לא תקין');}e.target.value='';});
+
+/* יומן: תצוגת שבוע */
+function startOfWeek(d){const x=new Date(d);x.setDate(x.getDate()-x.getDay());x.setHours(0,0,0,0);return x;}
+function renderWeekView(){
+  const box=$('#week-view'),card=$('.calendar-card'),week=calMode==='week';
+  box.hidden=!week;card.hidden=week;$$('#cal-mode button').forEach(b=>b.classList.toggle('active',b.dataset.mode===calMode));
+  if(!week)return;
+  const start=startOfWeek(selectedDate),end=new Date(start);end.setDate(end.getDate()+6);
+  $('#month-title').textContent=`${start.getDate()} ${months[start.getMonth()]} - ${end.getDate()} ${months[end.getMonth()]}`;
+  box.innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const list=sorted(tasks.filter(t=>taskOnDate(t,d)));return `<button class="wk-day ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="wk-head"><small>${days[i].replace('יום ','')}</small><strong>${d.getDate()}</strong></span><span class="wk-tasks">${list.length?list.map(t=>`<span class="wk-task ${doneOn(t,d)?'done':''}" style="--gc:${getGroup(t)?.color||'#9db8d8'}">${t.time?`<em>${t.time}</em>`:''}${escapeHtml(t.title)}</span>`).join(''):'<span class="wk-empty">פנוי</span>'}</span></button>`;}).join('');
+}
+$('#cal-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;calMode=b.dataset.mode;render();});
+document.addEventListener('click',e=>{const wd=e.target.closest('.wk-day');if(!wd)return;selectedDate=parseDate(wd.dataset.date);calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();$('#day-dialog').showModal();});
+['#prev-month','#next-month'].forEach((sel,i)=>$(sel).addEventListener('click',e=>{if(calMode!=='week')return;e.stopImmediatePropagation();selectedDate=new Date(selectedDate.getTime());selectedDate.setDate(selectedDate.getDate()+(i?7:-7));calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();},true));
+renderWeekView();
+
+/* החלקה בטלפון: ימינה = הושלם, שמאלה = מחיקה */
+(()=>{let row=null,x0=0,y0=0,dx=0,moving=false;
+  document.addEventListener('touchstart',e=>{const r=e.target.closest?.('.task-row');if(!r||e.touches.length!==1||e.target.closest('button,input'))return;row=r;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;moving=false;},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!row)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;if(!moving){if(Math.abs(my)>12&&Math.abs(my)>Math.abs(mx)){row=null;return;}if(Math.abs(mx)<10)return;moving=true;}dx=mx;row.style.transition='none';row.style.transform=`translateX(${Math.max(-140,Math.min(140,dx))}px)`;row.dataset.swipe=dx>0?'done':'delete';},{passive:true});
+  document.addEventListener('touchend',()=>{if(!row)return;const r=row;row=null;r.style.transition='transform .2s';r.style.transform='';delete r.dataset.swipe;if(Math.abs(dx)<80)return;if(dx>0)r.querySelector('.task-check')?.click();else r.querySelector('.delete-task')?.click();});
+})();

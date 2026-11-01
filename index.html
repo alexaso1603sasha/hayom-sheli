@@ -23,27 +23,38 @@
     </style>
   </head>
   <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></symbol>
+<symbol id="i-bell" viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></symbol>
+<symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/></symbol>
+<symbol id="i-repeat" viewBox="0 0 24 24"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></symbol>
+<symbol id="i-tag" viewBox="0 0 24 24"><path d="M12.6 2.6A2 2 0 0 0 11.2 2H4a2 2 0 0 0-2 2v7.2a2 2 0 0 0 .6 1.4l8.7 8.7a2.4 2.4 0 0 0 3.4 0l6.6-6.6a2.4 2.4 0 0 0 0-3.4z"/><circle cx="7.5" cy="7.5" r=".6"/></symbol>
+<symbol id="i-list" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></symbol>
+<symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 10h18"/></symbol>
+<symbol id="i-up-right" viewBox="0 0 24 24"><path d="M7 17 17 7M7 7h10v10"/></symbol>
+<symbol id="i-left" viewBox="0 0 24 24"><path d="m15 18-6-6 6-6"/></symbol>
+<symbol id="i-right" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+</defs></svg>
+
     <main class="app-shell">
       <header class="topbar">
         <a class="brand" href="#today" aria-label="יומי">
-          <span class="brand-mark">✦</span>
+          <span class="brand-mark"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg></span>
           <span>יומי</span>
         </a>
         <div class="header-actions">
           <button id="refresh-button" class="icon-button refresh-button" type="button" aria-label="רענון וסנכרון"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 4v5h-5"/></svg></button>
-          <button id="open-drawer" class="menu-button" type="button" aria-label="פתיחת סרגל פעולות"><span aria-hidden="true">☰</span> פעולות</button>
-          <button class="icon-button" id="notification-button" title="הפעלת תזכורות" aria-label="הפעלת תזכורות">♧</button>
-          <button class="avatar" aria-label="פרופיל">א</button>
+          <button id="open-drawer" class="menu-button" type="button" aria-label="פתיחת סרגל פעולות"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg> פעולות</button>
+          <button class="icon-button" id="notification-button" title="הפעלת תזכורות" aria-label="הפעלת תזכורות"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></button>
         </div>
       </header>
 
       <section class="hero" id="today">
-        <button class="hero-plus add-task" data-type="dated" aria-label="משימה חדשה"></button>
         <div>
           <p class="eyebrow" id="today-label"></p>
           <h1>בואי נעשה מקום למה שחשוב.</h1>
           <p class="hero-copy" id="hero-default">תכנון עדין ליום ממוקד יותר.</p>
-          <div id="nudge" class="nudge" hidden><p class="nudge-label">✦ שווה לזכור</p><div id="nudge-body" class="nudge-body"></div><div class="nudge-foot"><button id="nudge-ignore" class="nudge-ignore" type="button">התעלמות</button><span id="nudge-dots" class="nudge-dots"></span></div></div>
+          <div id="nudge" class="nudge" hidden><p class="nudge-label">✦ שווה לזכור</p><div id="nudge-body" class="nudge-body"></div><div class="nudge-foot"><button id="nudge-ignore" class="nudge-ignore" type="button">אל תזכיר שוב</button><span id="nudge-dots" class="nudge-dots"></span></div></div>
         </div>
         
       </section>
@@ -60,6 +71,7 @@
           <button class="text-button" id="jump-today">היום</button>
         </div>
         <div class="date-strip" id="date-strip" aria-label="בחירת יום"></div>
+        <section class="card focus-card"><p class="eyebrow">הדבר הבא</p><div id="next-task" class="next-task"></div></section>
         <div class="content-grid">
           <section class="card schedule-card">
             <div class="card-title-row"><h3>לוח זמנים</h3><span id="daily-progress" class="progress-pill"></span></div>
@@ -68,14 +80,9 @@
             
           </section>
           <aside class="side-stack">
-            <section class="card focus-card">
-              <p class="eyebrow">פוקוס</p>
-              <h3>הדבר הבא שלך</h3>
-              <div id="next-task" class="next-task"></div>
-            </section>
             <div id="panels-home" class="panels-home"></div>
             <section class="card recurring-card">
-              <div class="card-title-row"><div><p class="eyebrow">שגרה</p><h3>משימות קבועות</h3></div><button id="week-schedule-button" class="small-round" aria-label="פתיחת טבלת השבוע">↗</button></div>
+              <div class="card-title-row"><div><p class="eyebrow">שגרה</p><h3>משימות קבועות</h3></div><button id="week-schedule-button" class="small-round" aria-label="פתיחת טבלת השבוע"><svg class="ic" aria-hidden="true"><use href="#i-up-right"/></svg></button></div>
               <div id="recurring-preview" class="mini-list"></div>
             </section>
           </aside>
@@ -83,7 +90,8 @@
       </section>
 
       <section class="view" id="calendar-view">
-        <div class="section-heading"><div><p class="eyebrow">תכנון קדימה</p><h2>יומן</h2></div><div class="calendar-controls"><button id="prev-month">‹</button><strong id="month-title"></strong><button id="next-month">›</button></div></div>
+        <div class="section-heading"><div><p class="eyebrow">תכנון קדימה</p><h2>יומן</h2></div><div class="type-switch cal-mode" id="cal-mode"><button type="button" data-mode="month" class="active">חודש</button><button type="button" data-mode="week">שבוע</button></div><div class="calendar-controls"><button id="prev-month" aria-label="הקודם"><svg class="ic" aria-hidden="true"><use href="#i-right"/></svg></button><strong id="month-title"></strong><button id="next-month" aria-label="הבא"><svg class="ic" aria-hidden="true"><use href="#i-left"/></svg></button></div></div>
+        <div id="week-view" class="week-view" hidden></div>
         <section class="card calendar-card"><div class="calendar-weekdays"><span>א׳</span><span>ב׳</span><span>ג׳</span><span>ד׳</span><span>ה׳</span><span>ו׳</span><span>ש׳</span></div><div id="calendar-grid" class="calendar-grid"></div></section>
         
       </section>
@@ -116,17 +124,18 @@
     <div id="drawer-overlay" class="drawer-overlay"></div>
     <aside id="action-drawer" class="action-drawer" data-mode="menu" aria-label="סרגל פעולות">
       <div class="drawer-header"><div><p class="eyebrow">הארגון שלך</p><h2>סרגל פעולות</h2></div><button id="close-drawer" class="close-button" aria-label="סגירה">×</button></div>
-      <button class="drawer-section" data-drawer-view="recurring"><span class="drawer-icon">↻</span><span><strong>משימות קבועות</strong><small>עריכה של השגרה שלך</small></span></button>
-      <button class="drawer-section" data-drawer-view="groups"><span class="drawer-icon">●</span><span><strong>קבוצות פעולות</strong><small>קטגוריות וצבעים</small></span></button>
-      <button class="drawer-section" data-drawer-view="lists"><span class="drawer-icon">≡</span><span><strong>רשימות</strong><small>קניות, רעיונות וכל מה שצריך</small></span></button>
-      <button class="drawer-section" data-drawer-view="panels"><span class="drawer-icon">▭</span><span><strong>מלבנים אישיים</strong><small>מלבנים בצבע ובשם שלך בעמוד הבית</small></span></button>
-      <button class="drawer-section" data-drawer-view="reminders"><span class="drawer-icon">♧</span><span><strong>תזכורות</strong><small>הפעלה בטלפון ובמחשב</small></span></button>
+      <button class="drawer-section" data-drawer-view="recurring"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-repeat"/></svg></span><span><strong>משימות קבועות</strong><small>עריכה של השגרה שלך</small></span></button>
+      <button class="drawer-section" data-drawer-view="groups"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-tag"/></svg></span><span><strong>קבוצות פעולות</strong><small>קטגוריות וצבעים</small></span></button>
+      <button class="drawer-section" data-drawer-view="lists"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-list"/></svg></span><span><strong>רשימות</strong><small>קניות, רעיונות וכל מה שצריך</small></span></button>
+      <button class="drawer-section" data-drawer-view="panels"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-panel"/></svg></span><span><strong>מלבנים אישיים</strong><small>מלבנים בצבע ובשם שלך בעמוד הבית</small></span></button>
+      <button class="drawer-section" data-drawer-view="reminders"><span class="drawer-icon"><svg class="ic" aria-hidden="true"><use href="#i-bell"/></svg></span><span><strong>תזכורות</strong><small>הפעלה בטלפון ובמחשב</small></span></button>
       <section class="drawer-page" id="recurring-drawer"><div class="drawer-page-title"><div><p class="eyebrow">השגרה שלך</p><h3>טבלת השבוע</h3></div><button class="small-round add-task" data-type="recurring" aria-label="משימה קבועה חדשה">＋</button></div><p class="drawer-help">לחצי על יום כדי להוסיף אליו משימה קבועה, או על משימה קיימת כדי לערוך אותה.</p><div id="week-table" class="week-table"></div></section>
       <section class="drawer-page" id="groups-drawer"><div class="drawer-page-title"><h3>הקבוצות שלך</h3><button id="add-group" class="small-round" aria-label="קבוצה חדשה">＋</button></div><p class="drawer-help">אפשר להוסיף, לשנות צבע או למחוק קבוצה. משימות שכבר שויכו נשארות מסודרות.</p><div id="group-list" class="drawer-list"></div><form id="group-form" class="group-form"><input id="group-name-input" maxlength="30" placeholder="למשל: קניות" required /><input id="group-color-input" type="color" value="#6d5bd0" aria-label="צבע הקבוצה" /><button class="primary-button">הוספת קבוצה</button></form></section>
       <section class="drawer-page" id="lists-drawer"><div class="drawer-page-title"><div><p class="eyebrow">לא לשכוח</p><h3>הרשימות שלי</h3></div></div><p class="drawer-help">צרי רשימה, הוסיפי פריטים וסמני מה שכבר הושלם. רשימות מהירות מכפתור ״זריזה״ נשמרות כאן.</p><form id="list-form" class="group-form"><input id="list-name-input" maxlength="40" placeholder="שם רשימה חדשה, למשל: קניות" required /><button class="primary-button">יצירת רשימה</button></form><div id="lists-container" class="lists-grid"></div></section>
       <section class="drawer-page" id="panels-drawer"><div class="drawer-page-title"><div><p class="eyebrow">העמוד שלך</p><h3>המלבנים שלי</h3></div></div><p class="drawer-help">כל מלבן מופיע בעמוד הבית. אפשר להוסיף לו משימות יומיות, קבועות וכלליות, ולשייך משימה למלבן בעת יצירתה.</p><form id="panel-form" class="group-form"><input id="panel-name-input" maxlength="30" placeholder="שם המלבן, למשל: עבודה" required /><input id="panel-color-input" type="color" value="#2f6fc4" aria-label="צבע המלבן" /><button class="primary-button">הוספת מלבן</button></form><div id="panel-list" class="drawer-list" style="margin-top:16px"></div></section>
       <section class="drawer-page" id="reminders-drawer"><h3>תזכורות</h3><p class="drawer-help">לחצי על הכפתור ואשרי התראות. כשהאפליקציה פתוחה, התזכורות שהגדרת יוצגו במכשיר.</p><button id="drawer-notification-button" class="primary-button">הפעלת תזכורות</button>
-      <button id="diag-button" class="secondary-button" type="button" style="margin-top:10px">בדיקת תזכורות</button><pre id="diag-result" class="diag-result"></pre><div class="sync-box"><h3>סנכרון בין מכשירים</h3><p class="drawer-help">אותו קוד בטלפון ובמחשב = אותן משימות ואותן התראות, גם כשהאפליקציה סגורה. ב"קוד חדש" מייצרים קוד, ואת אותו הקוד מקלידים במכשיר השני.</p><input id="sync-code-input" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="קוד סנכרון" /><div class="sync-actions"><button id="sync-new-code" type="button" class="secondary-button">קוד חדש</button><button id="sync-save-code" type="button" class="primary-button">חיבור</button></div><p id="sync-status" class="notification-note"></p></div></section>
+      <button id="diag-button" class="secondary-button" type="button" style="margin-top:10px">בדיקת תזכורות</button><pre id="diag-result" class="diag-result"></pre>
+      <div class="sync-box"><h3>גיבוי</h3><p class="drawer-help">שמירת עותק של כל המשימות, הרשימות והמלבנים בקובץ, ושחזור ממנו בכל מכשיר.</p><div class="sync-actions"><button id="export-button" type="button" class="secondary-button">ייצוא גיבוי</button><label class="secondary-button file-button">שחזור מקובץ<input id="import-input" type="file" accept="application/json,.json" hidden></label></div></div><div class="sync-box"><h3>סנכרון בין מכשירים</h3><p class="drawer-help">אותו קוד בטלפון ובמחשב = אותן משימות ואותן התראות, גם כשהאפליקציה סגורה. ב"קוד חדש" מייצרים קוד, ואת אותו הקוד מקלידים במכשיר השני.</p><input id="sync-code-input" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="קוד סנכרון" /><div class="sync-actions"><button id="sync-new-code" type="button" class="secondary-button">קוד חדש</button><button id="sync-save-code" type="button" class="primary-button">חיבור</button></div><p id="sync-status" class="notification-note"></p></div></section>
     </aside>
     <div id="toast" class="toast" role="status"></div>
     <script src="app.js"></script>
