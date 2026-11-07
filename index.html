@@ -136,7 +136,7 @@
       <button id="diag-button" class="secondary-button" type="button" style="margin-top:10px">בדיקת תזכורות</button><pre id="diag-result" class="diag-result"></pre>
       <div class="sync-box"><h3>גיבוי</h3><p class="drawer-help">שמירת עותק של כל המשימות, הרשימות והמלבנים בקובץ, ושחזור ממנו בכל מכשיר.</p><div class="sync-actions"><button id="export-button" type="button" class="secondary-button">ייצוא גיבוי</button><label class="secondary-button file-button">שחזור מקובץ<input id="import-input" type="file" accept="application/json,.json" hidden></label></div></div><div class="sync-box"><h3>סנכרון בין מכשירים</h3><p class="drawer-help">אותו קוד בטלפון ובמחשב = אותן משימות ואותן התראות, גם כשהאפליקציה סגורה. ב"קוד חדש" מייצרים קוד, ואת אותו הקוד מקלידים במכשיר השני.</p><input id="sync-code-input" dir="ltr" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="קוד סנכרון" /><div class="sync-actions"><button id="sync-new-code" type="button" class="secondary-button">קוד חדש</button><button id="sync-save-code" type="button" class="primary-button">חיבור</button></div><p id="sync-status" class="notification-note"></p></div></section>
     </aside>
-    <aside id="fmt-bar" class="fmt-bar" aria-label="עיצוב משימות">
+    <aside id="fmt-bar" class="fmt-bar" hidden aria-label="עיצוב משימות">
       <button id="fmt-toggle" class="fmt-btn" type="button" aria-label="עיצוב משימה" title="עיצוב משימה"><svg class="ic"><use href="#i-palette"/></svg></button>
       <div id="fmt-tools" class="fmt-tools" hidden>
         <p id="fmt-hint" class="fmt-hint">לחצי על משימה כדי לעצב אותה</p>

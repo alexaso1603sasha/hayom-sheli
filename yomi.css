@@ -361,3 +361,16 @@ input[type=color].fmt-custom::-moz-color-swatch{opacity:0}
 .wt-title,.wk-task bdi{background-image:linear-gradient(transparent 52%,var(--tmark,transparent) 52%);-webkit-box-decoration-break:clone;box-decoration-break:clone}
 .wk-task{font-weight:var(--tw,400);font-size:calc(.8rem*var(--tsz,1))}
 body.fmt-open .fmt-bar{box-shadow:-6px 8px 28px rgba(18,35,63,.24)}
+
+/* v14: סרגל קומפקטי בלי גלילה, צבע פינה, החלקה חלקה */
+.fmt-bar{max-height:none;padding:8px 6px;gap:6px}
+.fmt-tools{overflow:visible;max-height:none;gap:5px;width:78px}
+.fmt-btn{width:32px;height:32px;min-height:32px}
+.fmt-swatches{grid-template-columns:repeat(3,22px);gap:5px}
+.fmt-label{margin:2px 0 0}
+.fmt-hint{max-width:78px;min-height:24px}
+@media (hover:none),(pointer:coarse){.fmt-bar{display:none!important}}
+.task-row{touch-action:pan-y;will-change:transform}
+.task-row.swipe-ready{background:#dff0ff}
+.task-row[style*="--pc"]{border-inline-start:4px solid var(--pc);background:var(--tbg,color-mix(in srgb,var(--pc) 12%,#fff))}
+.wk-task[style*="--pc"],.week-task[style*="--pc"]{background:var(--tbg,color-mix(in srgb,var(--pc) 20%,#fff));border-inline-start:3px solid var(--pc)}

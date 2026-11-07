@@ -10,7 +10,7 @@ const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parseDate = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
 let today = new Date(); today.setHours(0, 0, 0, 0);
-let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = null;
+let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set();
 let selectedDate = new Date(today), calendarDate = new Date(today.getFullYear(), today.getMonth(), 1), dialogDate = new Date(today), modalType = 'dated', editingTaskId = null, timeoutIds = [];
 
 const sample = [
@@ -36,12 +36,12 @@ function dateName(date){return `${days[date.getDay()]}, ${date.getDate()} ב${mo
 function sorted(list){return [...list].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));}
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));}
 function getGroup(task){return groups.find(g=>g.id===task.group);}
-function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date);return `<div class="task-row ${done?'done':''}" data-id="${task.id}"${fmtAttr(task)}><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span></div>${task.time?`<span class="task-time">${task.time}</span>`:''}<button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div>`;}
+function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date);return `<div class="task-row ${done?'done':''}" data-id="${task.id}" data-wd="${(date||selectedDate).getDay()}"${fmtAttr(task,(date||selectedDate).getDay())}><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span></div>${task.time?`<span class="task-time">${task.time}</span>`:''}<button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div>`;}
 function renderDateStrip(){const holder=$('#date-strip');holder.innerHTML='';for(let i=-3;i<=5;i++){const d=new Date(today);d.setDate(today.getDate()+i);holder.insertAdjacentHTML('beforeend',`<button class="date-pill ${iso(d)===iso(selectedDate)?'selected':''} ${iso(d)===iso(today)?'today':''}" data-date="${iso(d)}"><span>${shortDays[d.getDay()]}</span><strong>${d.getDate()}</strong></button>`);}}
 function renderToday(){const dayAll=sorted(tasks.filter(t=>taskOnDate(t,selectedDate))),list=dayAll.filter(t=>!t.panel),complete=list.filter(t=>doneOn(t,selectedDate)).length;$('#schedule-title').textContent=iso(selectedDate)===iso(today)?'היום':dateName(selectedDate);$('#daily-progress').textContent=list.length?`${complete} מתוך ${list.length} הושלמו`:'יום פנוי';$('#daily-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין כאן עדיין משימות. יום נעים ומרווח ✨</div>';const pending=sorted(dayAll.filter(t=>!doneOn(t,selectedDate))),nowD=new Date(),nowHM=`${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`,upcoming=iso(selectedDate)===iso(today)?pending.filter(t=>!t.time||t.time>=nowHM):pending,next=upcoming[0],overdue=pending.length-upcoming.length;$('#next-task').innerHTML=next?`<strong>${escapeHtml(next.title)}</strong><span>${next.time||'ללא שעה'}${next.type==='recurring'?' · משימה קבועה':''}</span>`:pending.length?`<strong>אין עוד משימות להמשך היום</strong><span>${overdue} ${overdue===1?'משימה שעברה שעתה ממתינה':'משימות שעברה שעתן ממתינות'} לסימון</span>`:'<strong>סיימת הכול להיום ✨</strong><span>זמן לנשום קצת.</span>';}
 function renderGeneral(){const list=tasks.filter(t=>t.type==='general'&&!t.panel);$('#general-tasks').innerHTML=list.length?list.map(t=>taskRow(t,null,true)).join(''):'<div class="empty-state">רשמי כאן כל דבר שתרצי לזכור, בלי להתחייב לתאריך.</div>';}
-function renderCalendar(){const y=calendarDate.getFullYear(),m=calendarDate.getMonth();$('#month-title').textContent=`${months[m]} ${y}`;const first=new Date(y,m,1),start=first.getDay(),last=new Date(y,m+1,0).getDate(),previous=new Date(y,m,0).getDate();let cells='';for(let i=0;i<42;i++){const number=i<start?previous-start+i+1:i>=start+last?i-start-last+1:i-start+1,current=i>=start&&i<start+last,d=new Date(y,current?m:(i<start?m-1:m+1),number),dayTasks=tasks.filter(t=>taskOnDate(t,d)),amount=dayTasks.length;cells+=`<button class="calendar-day ${current?'':'muted'} ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="day-number">${number}</span>${amount?`<span class="calendar-dots">${[...new Set(dayTasks.map(t=>getGroup(t)?.color||'#9db8d8'))].slice(0,3).map(col=>`<i class="calendar-dot" style="background:${col}"></i>`).join('')}</span>`:''}</button>`;}$('#calendar-grid').innerHTML=cells;const list=sorted(tasks.filter(t=>taskOnDate(t,selectedDate)));$('#calendar-day-title').textContent=dateName(selectedDate);$('#calendar-day-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין משימות ביום הזה עדיין. אפשר להוסיף אחת כאן.</div>';}
-function renderDrawer(){const week=days.map((day,index)=>{const list=sorted(tasks.filter(t=>t.type==='recurring'&&t.days.includes(index)));return `<section class="week-day"><button class="week-day-head" data-week-day="${index}"><strong>${day}</strong><span>＋ הוספה</span></button><div class="week-tasks">${list.length?list.map(t=>`<button class="week-task" data-edit-id="${t.id}" data-edit-day="${index}"${fmtAttr(t)}><i class="group-dot" style="--group-color:${getGroup(t)?.color||'#9db8d8'}"></i><bdi class="wt-title">${escapeHtml(t.title)}</bdi>${t.time?`<small class="wt-time" dir="ltr">${t.time}</small>`:''}</button>`).join(''):'<div class="week-empty">אין משימות קבועות</div>'}</div></section>`;}).join('');$('#week-table').innerHTML=week;$('#group-list').innerHTML=groups.length?groups.map(g=>`<div class="group-row" data-group-id="${g.id}"><input class="group-color" type="color" value="${g.color}" aria-label="צבע ${escapeHtml(g.name)}"><span>${escapeHtml(g.name)}</span><small>${tasks.filter(t=>t.group===g.id).length} משימות</small><button class="delete-group" aria-label="מחיקת ${escapeHtml(g.name)}">×</button></div>`).join(''):'<div class="empty-state">הוסיפי קבוצה ראשונה.</div>';}
+function renderCalendar(){const y=calendarDate.getFullYear(),m=calendarDate.getMonth();$('#month-title').textContent=`${months[m]} ${y}`;const first=new Date(y,m,1),start=first.getDay(),last=new Date(y,m+1,0).getDate(),previous=new Date(y,m,0).getDate();let cells='';for(let i=0;i<42;i++){const number=i<start?previous-start+i+1:i>=start+last?i-start-last+1:i-start+1,current=i>=start&&i<start+last,d=new Date(y,current?m:(i<start?m-1:m+1),number),dayTasks=tasks.filter(t=>taskOnDate(t,d)),amount=dayTasks.length;cells+=`<button class="calendar-day ${current?'':'muted'} ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="day-number">${number}</span>${amount?`<span class="calendar-dots">${[...new Set(dayTasks.map(t=>taskColor(t)||'#9db8d8'))].slice(0,3).map(col=>`<i class="calendar-dot" style="background:${col}"></i>`).join('')}</span>`:''}</button>`;}$('#calendar-grid').innerHTML=cells;const list=sorted(tasks.filter(t=>taskOnDate(t,selectedDate)));$('#calendar-day-title').textContent=dateName(selectedDate);$('#calendar-day-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין משימות ביום הזה עדיין. אפשר להוסיף אחת כאן.</div>';}
+function renderDrawer(){const week=days.map((day,index)=>{const list=sorted(tasks.filter(t=>t.type==='recurring'&&t.days.includes(index)));return `<section class="week-day"><button class="week-day-head" data-week-day="${index}"><strong>${day}</strong><span>＋ הוספה</span></button><div class="week-tasks">${list.length?list.map(t=>`<button class="week-task" data-edit-id="${t.id}" data-edit-day="${index}" data-wd="${index}"${fmtAttr(t,index)}><i class="group-dot" style="--group-color:${taskColor(t)||'#9db8d8'}"></i><bdi class="wt-title">${escapeHtml(t.title)}</bdi>${t.time?`<small class="wt-time" dir="ltr">${t.time}</small>`:''}</button>`).join(''):'<div class="week-empty">אין משימות קבועות</div>'}</div></section>`;}).join('');$('#week-table').innerHTML=week;$('#group-list').innerHTML=groups.length?groups.map(g=>`<div class="group-row" data-group-id="${g.id}"><input class="group-color" type="color" value="${g.color}" aria-label="צבע ${escapeHtml(g.name)}"><span>${escapeHtml(g.name)}</span><small>${tasks.filter(t=>t.group===g.id).length} משימות</small><button class="delete-group" aria-label="מחיקת ${escapeHtml(g.name)}">×</button></div>`).join(''):'<div class="empty-state">הוסיפי קבוצה ראשונה.</div>';}
 function render(){renderDateStrip();renderToday();renderGeneral();renderCalendar();renderWeekView();renderDrawer();renderLists();renderPanels();renderNudge();applyFmtSelection();}
 function showToast(text){const toast=$('#toast');toast.textContent=text;toast.classList.add('visible');setTimeout(()=>toast.classList.remove('visible'),2500);}
 function fillGroups(selected=''){$('#group-input').innerHTML='<option value="">ללא קבוצה</option>'+groups.map(g=>`<option value="${g.id}" ${g.id===selected?'selected':''}>${escapeHtml(g.name)}</option>`).join('');}
@@ -254,41 +254,66 @@ function renderWeekView(){
   if(!week)return;
   const start=startOfWeek(selectedDate),end=new Date(start);end.setDate(end.getDate()+6);
   $('#month-title').textContent=`${start.getDate()} ${months[start.getMonth()]} - ${end.getDate()} ${months[end.getMonth()]}`;
-  box.innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const list=sorted(tasks.filter(t=>taskOnDate(t,d)));return `<button class="wk-day ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="wk-head"><small>${days[i].replace('יום ','')}</small><strong>${d.getDate()}</strong></span><span class="wk-tasks">${list.length?list.map(t=>`<span class="wk-task ${doneOn(t,d)?'done':''}" data-id="${t.id}" style="--gc:${getGroup(t)?.color||'#9db8d8'}${fmtVars(t)?';'+fmtVars(t):''}">${t.time?`<em class="wk-time" dir="ltr">${t.time}</em>`:''}<bdi>${escapeHtml(t.title)}</bdi></span>`).join(''):'<span class="wk-empty">פנוי</span>'}</span></button>`;}).join('');
+  box.innerHTML=Array.from({length:7},(_,i)=>{const d=new Date(start);d.setDate(start.getDate()+i);const list=sorted(tasks.filter(t=>taskOnDate(t,d)));return `<button class="wk-day ${iso(d)===iso(today)?'today':''} ${iso(d)===iso(selectedDate)?'selected':''}" data-date="${iso(d)}"><span class="wk-head"><small>${days[i].replace('יום ','')}</small><strong>${d.getDate()}</strong></span><span class="wk-tasks">${list.length?list.map(t=>`<span class="wk-task ${doneOn(t,d)?'done':''}" data-id="${t.id}" data-wd="${d.getDay()}" style="--gc:${taskColor(t)||'#9db8d8'}${fmtVars(t,d.getDay())?';'+fmtVars(t,d.getDay()):''}">${t.time?`<em class="wk-time" dir="ltr">${t.time}</em>`:''}<bdi>${escapeHtml(t.title)}</bdi></span>`).join(''):'<span class="wk-empty">פנוי</span>'}</span></button>`;}).join('');
 }
 $('#cal-mode').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;calMode=b.dataset.mode;render();});
 document.addEventListener('click',e=>{const wd=e.target.closest('.wk-day');if(!wd)return;selectedDate=parseDate(wd.dataset.date);calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();$('#day-dialog').showModal();});
 ['#prev-month','#next-month'].forEach((sel,i)=>$(sel).addEventListener('click',e=>{if(calMode!=='week')return;e.stopImmediatePropagation();selectedDate=new Date(selectedDate.getTime());selectedDate.setDate(selectedDate.getDate()+(i?7:-7));calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();},true));
 renderWeekView();
 
-/* החלקה בטלפון: ימינה = הושלם, שמאלה = מחיקה */
-(()=>{let row=null,x0=0,y0=0,dx=0,moving=false;
+/* החלקה בטלפון: ימינה = הושלם */
+(()=>{let row=null,x0=0,y0=0,dx=0,moving=false,raf=0;
   document.addEventListener('touchstart',e=>{const r=e.target.closest?.('.task-row');if(!r||e.touches.length!==1||e.target.closest('button,input'))return;row=r;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;moving=false;},{passive:true});
-  document.addEventListener('touchmove',e=>{if(!row)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;if(!moving){if(Math.abs(my)>12&&Math.abs(my)>Math.abs(mx)){row=null;return;}if(Math.abs(mx)<10)return;moving=true;}dx=mx;row.style.transition='none';row.style.transform=`translateX(${Math.max(-140,Math.min(140,dx))}px)`;row.dataset.swipe=dx>0?'done':'delete';},{passive:true});
-  document.addEventListener('touchend',()=>{if(!row)return;const r=row;row=null;r.style.transition='transform .2s';r.style.transform='';delete r.dataset.swipe;if(Math.abs(dx)<80)return;if(dx>0)r.querySelector('.task-check')?.click();else r.querySelector('.delete-task')?.click();});
+  document.addEventListener('touchmove',e=>{if(!row)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;if(!moving){if(Math.abs(my)>10&&Math.abs(my)>Math.abs(mx)){row=null;return;}if(mx<10)return;moving=true;row.style.transition='none';}dx=Math.max(0,Math.min(130,mx));if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(!row)return;row.style.transform=`translate3d(${dx}px,0,0)`;row.classList.toggle('swipe-ready',dx>=80);});},{passive:true});
+  document.addEventListener('touchend',()=>{if(!row)return;const r=row,go=dx>=80;row=null;r.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';r.style.transform='';r.classList.remove('swipe-ready');if(go)r.querySelector('.task-check')?.click();});
 })();
 
-/* סרגל עיצוב משימות: צבע, מרקר, גודל וכתב בולט */
-const MARKS=['','#ffe58a','#bff0d4','#ffc9d4'];
-function fmtVars(t){const f=t.fmt;if(!f)return '';const col=v=>/^#[0-9a-f]{3,8}$/i.test(v||'')?v:'';return [col(f.bg)&&`--tbg:${col(f.bg)}`,Number(f.size)>0&&`--tsz:${Math.min(1.6,Math.max(.8,Number(f.size)))}`,f.bold&&'--tw:800',col(f.mark)&&`--tmark:${col(f.mark)}`].filter(Boolean).join(';');}
-function fmtAttr(t){const v=fmtVars(t);return v?` style="${v}"`:'';}
-function applyFmtSelection(){const idOf=r=>r.dataset.id||r.dataset.editId;$$('.task-row,.week-task,.wk-task').forEach(r=>r.classList.toggle('fmt-selected',fmtOn&&idOf(r)===fmtSel));const t=tasks.find(x=>x.id===fmtSel);$('#fmt-hint').textContent=fmtOn&&t?t.title:'לחצי על משימה כדי לעצב אותה';}
+/* סרגל עיצוב משימות (מחשב בלבד): צבע, מרקר, גודל וכתב בולט, לכל משימה בנפרד */
+function taskColor(t){const p=t.panel&&panels.find(x=>x.id===t.panel);return p?p.color:getGroup(t)?.color;}
+function fmtOf(t,wd){return t.type==='recurring'&&t.fmtDays?t.fmtDays[wd]:t.fmt;}
+function fmtVars(t,wd){const f=fmtOf(t,wd)||{},col=v=>/^#[0-9a-f]{3,8}$/i.test(v||'')?v:'',pc=t.panel?col(taskColor(t)):'';return [pc&&`--pc:${pc}`,col(f.bg)&&`--tbg:${col(f.bg)}`,Number(f.size)>0&&`--tsz:${Math.min(1.6,Math.max(.8,Number(f.size)))}`,f.bold&&'--tw:800',col(f.mark)&&`--tmark:${col(f.mark)}`].filter(Boolean).join(';');}
+function fmtAttr(t,wd){const v=fmtVars(t,wd);return v?` style="${v}"`:'';}
+function fmtKey(el){return `${el.dataset.id||el.dataset.editId}|${el.dataset.wd||''}`;}
+function applyFmtSelection(){
+  $$('.task-row,.week-task,.wk-task').forEach(r=>r.classList.toggle('fmt-selected',fmtOn&&fmtSel.has(fmtKey(r))));
+  const n=fmtSel.size,t=n===1?tasks.find(x=>x.id===[...fmtSel][0].split('|')[0]):null;
+  $('#fmt-hint').textContent=!fmtOn||!n?'לחצי על משימה כדי לעצב אותה':n>1?`נבחרו ${n} משימות`:(t?t.title:'');
+}
 function fmtApply(kind,val){
-  const t=tasks.find(x=>x.id===fmtSel);if(!t){showToast('בחרי קודם משימה בלחיצה עליה');return;}
-  const f={...(t.fmt||{})};
-  if(kind==='reset'){delete t.fmt;save();render();return;}
-  if(kind==='bg')f.bg=val||'';
-  else if(kind==='mark')f.mark=val||'';
-  else if(kind==='bigger')f.size=Math.min(1.6,+((f.size||1)+.1).toFixed(2));
-  else if(kind==='smaller')f.size=Math.max(.8,+((f.size||1)-.1).toFixed(2));
-  else if(kind==='bold')f.bold=!f.bold;
-  if(f.size&&Math.abs(f.size-1)<.01)delete f.size;
-  Object.keys(f).forEach(k=>{if(!f[k])delete f[k];});
-  if(Object.keys(f).length)t.fmt=f;else delete t.fmt;
+  if(!fmtSel.size){showToast('בחרי קודם משימה בלחיצה עליה');return;}
+  for(const key of fmtSel){
+    const [id,wd]=key.split('|'),t=tasks.find(x=>x.id===id);if(!t)continue;
+    const rec=t.type==='recurring';
+    if(rec&&!t.fmtDays){t.fmtDays={};if(t.fmt){(t.days||[]).forEach(d=>{t.fmtDays[d]={...t.fmt};});delete t.fmt;}}
+    if(kind==='reset'){if(rec)delete t.fmtDays[wd];else delete t.fmt;continue;}
+    const f={...(rec?(t.fmtDays[wd]||{}):(t.fmt||{}))};
+    if(kind==='bg')f.bg=val||'';
+    else if(kind==='mark')f.mark=val||'';
+    else if(kind==='bigger')f.size=Math.min(1.6,+((f.size||1)+.1).toFixed(2));
+    else if(kind==='smaller')f.size=Math.max(.8,+((f.size||1)-.1).toFixed(2));
+    else if(kind==='bold')f.bold=!f.bold;
+    if(f.size&&Math.abs(f.size-1)<.01)delete f.size;
+    Object.keys(f).forEach(k=>{if(!f[k])delete f[k];});
+    const has=Object.keys(f).length;
+    if(rec){if(has)t.fmtDays[wd]=f;else delete t.fmtDays[wd];}else{if(has)t.fmt=f;else delete t.fmt;}
+  }
   save();render();
 }
-$('#fmt-toggle').addEventListener('click',()=>{fmtOn=!fmtOn;$('#fmt-tools').hidden=!fmtOn;$('#fmt-bar').classList.toggle('open',fmtOn);$('#fmt-toggle').classList.toggle('active',fmtOn);document.body.classList.toggle('fmt-open',fmtOn);if(!fmtOn)fmtSel=null;applyFmtSelection();});
+function setFmt(on){fmtOn=on;$('#fmt-tools').hidden=!on;$('#fmt-bar').classList.toggle('open',on);$('#fmt-toggle').classList.toggle('active',on);document.body.classList.toggle('fmt-open',on);if(!on)fmtSel.clear();applyFmtSelection();}
+function updateFmtVisibility(){
+  const bar=$('#fmt-bar'),drawer=$('#action-drawer'),fine=matchMedia('(hover:hover) and (pointer:fine)').matches;
+  const inWeek=!!$('#calendar-view')?.classList.contains('active')&&calMode==='week';
+  const inRec=drawer.classList.contains('open')&&drawer.dataset.mode==='page'&&!!$('#recurring-drawer')?.classList.contains('active');
+  const show=fine&&(inWeek||inRec);
+  if(bar.hidden!==!show)bar.hidden=!show;
+  if(!show&&fmtOn)setFmt(false);
+}
+$('#fmt-toggle').addEventListener('click',()=>setFmt(!fmtOn));
 $('#fmt-tools').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(b.dataset.bg!==undefined)fmtApply('bg',b.dataset.bg);else if(b.dataset.mark!==undefined)fmtApply('mark',b.dataset.mark);else if(b.dataset.fmt)fmtApply(b.dataset.fmt);});
 $('#fmt-tools').addEventListener('change',e=>{if(e.target.matches('.fmt-custom'))fmtApply(e.target.dataset.custom,e.target.value);});
-document.addEventListener('click',e=>{if(!fmtOn)return;if(e.target.closest('input,.fmt-bar'))return;const el=e.target.closest('.task-row,.week-task,.wk-task');if(!el)return;e.preventDefault();e.stopImmediatePropagation();fmtSel=el.dataset.id||el.dataset.editId;applyFmtSelection();},true);
-applyFmtSelection();
+document.addEventListener('click',e=>{if(!fmtOn)return;if(e.target.closest('input,.fmt-bar'))return;const el=e.target.closest('.task-row,.week-task,.wk-task');if(!el)return;e.preventDefault();e.stopImmediatePropagation();const key=fmtKey(el);if(e.metaKey||e.ctrlKey){if(fmtSel.has(key))fmtSel.delete(key);else fmtSel.add(key);}else{fmtSel.clear();fmtSel.add(key);}applyFmtSelection();},true);
+if(typeof MutationObserver!=='undefined')new MutationObserver(updateFmtVisibility).observe(document.body,{subtree:true,attributes:true,attributeFilter:['class','data-mode']});
+updateFmtVisibility();applyFmtSelection();
+
+/* חזרה לעמוד הראשי: התאריך חוזר להיום */
+document.addEventListener('click',e=>{const tab=e.target.closest('.tab');if(tab&&tab.dataset.view==='today'){selectedDate=new Date(today);calendarDate=new Date(today.getFullYear(),today.getMonth(),1);render();}});
