@@ -174,6 +174,19 @@ async function handle(request, env) {
     return reply(env, { ok: true });
   }
 
+  if (url.pathname === '/api/meta' && request.method === 'GET') {
+    let u; try { u = new URL(url.searchParams.get('url') || ''); } catch (e) { return reply(env, { error: 'bad url' }, 400); }
+    if (!/^https?:$/.test(u.protocol) || /^(localhost|127\.|10\.|192\.168\.|169\.254\.|0\.)/.test(u.hostname)) return reply(env, { error: 'blocked' }, 400);
+    try {
+      const res = await fetch(u.toString(), { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; YomiPreview/1.0)', 'Accept-Language': 'he,en;q=0.8' }, redirect: 'follow' });
+      const html = (await res.text()).slice(0, 120000);
+      const pick = re => { const m = html.match(re); return m ? m[1].replace(/\s+/g, ' ').trim() : ''; };
+      const decode = t => t.replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>');
+      const title = decode(pick(/<meta[^>]+property=["']og:title["'][^>]+content=["']([^"']+)["']/i) || pick(/<meta[^>]+content=["']([^"']+)["'][^>]+property=["']og:title["']/i) || pick(/<title[^>]*>([^<]+)<\/title>/i));
+      return reply(env, { title: title.slice(0, 120) });
+    } catch (e) { return reply(env, { error: 'fetch failed' }, 502); }
+  }
+
   if (url.pathname === '/api/test' && request.method === 'POST') {
     let body; try { body = await request.json(); } catch (e) { return reply(env, { error: 'bad json' }, 400); }
     if (!validCode(body.code)) return reply(env, { error: 'bad code' }, 400);
@@ -188,7 +201,7 @@ async function handle(request, env) {
     return reply(env, { subs: subs.length, ok, fail });
   }
 
-  return reply(env, { ok: true, name: 'hayom-sheli-push', version: 5 });
+  return reply(env, { ok: true, name: 'hayom-sheli-push', version: 6 });
 }
 
 export default {

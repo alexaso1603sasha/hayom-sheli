@@ -10,7 +10,7 @@ const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parseDate = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
 let today = new Date(); today.setHours(0, 0, 0, 0);
-let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set();
+let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set(), draftAttach = [], appPick = null;
 let selectedDate = new Date(today), calendarDate = new Date(today.getFullYear(), today.getMonth(), 1), dialogDate = new Date(today), modalType = 'dated', editingTaskId = null, timeoutIds = [];
 
 const sample = [
@@ -36,7 +36,7 @@ function dateName(date){return `${days[date.getDay()]}, ${date.getDate()} ב${mo
 function sorted(list){return [...list].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));}
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));}
 function getGroup(task){return groups.find(g=>g.id===task.group);}
-function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date);return `<div class="task-row ${done?'done':''}" data-id="${task.id}" data-wd="${(date||selectedDate).getDay()}"${fmtAttr(task,(date||selectedDate).getDay())}><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span></div>${task.time?`<span class="task-time" dir="ltr">${task.time}${task.end?`–${task.end}`:''}</span>`:''}<button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div>`;}
+function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date);return `<div class="task-row ${done?'done':''}" data-id="${task.id}" data-wd="${(date||selectedDate).getDay()}"${fmtAttr(task,(date||selectedDate).getDay())}><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span>${chipsHtml(task)}</div>${task.time?`<span class="task-time" dir="ltr">${task.time}${task.end?`–${task.end}`:''}</span>`:''}<button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div>`;}
 function renderDateStrip(){const holder=$('#date-strip');holder.innerHTML='';for(let i=-3;i<=5;i++){const d=new Date(today);d.setDate(today.getDate()+i);holder.insertAdjacentHTML('beforeend',`<button class="date-pill ${iso(d)===iso(selectedDate)?'selected':''} ${iso(d)===iso(today)?'today':''}" data-date="${iso(d)}"><span>${shortDays[d.getDay()]}</span><strong>${d.getDate()}</strong></button>`);}}
 function renderToday(){const dayAll=sorted(tasks.filter(t=>taskOnDate(t,selectedDate))),list=dayAll.filter(t=>!t.panel),complete=list.filter(t=>doneOn(t,selectedDate)).length;$('#schedule-title').textContent=iso(selectedDate)===iso(today)?'היום':dateName(selectedDate);$('#daily-progress').textContent=list.length?`${complete} מתוך ${list.length} הושלמו`:'יום פנוי';$('#daily-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין כאן עדיין משימות. יום נעים ומרווח ✨</div>';const pending=sorted(dayAll.filter(t=>!doneOn(t,selectedDate))),nowD=new Date(),nowHM=`${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`,upcoming=iso(selectedDate)===iso(today)?pending.filter(t=>!t.time||(t.end||t.time)>=nowHM):pending,next=upcoming[0],overdue=pending.length-upcoming.length;$('#next-task').innerHTML=next?`<strong>${escapeHtml(next.title)}</strong><span>${next.time||'ללא שעה'}${next.type==='recurring'?' · משימה קבועה':''}</span>`:pending.length?`<strong>אין עוד משימות להמשך היום</strong><span>${overdue} ${overdue===1?'משימה שעברה שעתה ממתינה':'משימות שעברה שעתן ממתינות'} לסימון</span>`:'<strong>סיימת הכול להיום ✨</strong><span>זמן לנשום קצת.</span>';}
 function renderGeneral(){const list=tasks.filter(t=>t.type==='general'&&!t.panel);$('#general-tasks').innerHTML=list.length?list.map(t=>taskRow(t,null,true)).join(''):'<div class="empty-state">רשמי כאן כל דבר שתרצי לזכור, בלי להתחייב לתאריך.</div>';}
@@ -48,8 +48,8 @@ function fillGroups(selected=''){$('#group-input').innerHTML='<option value="">�
 function fillTime(value='',remind='20:00',endV=''){const items=n=>'<div data-v="">--</div>'+Array.from({length:n},(_,i)=>{const v=String(i).padStart(2,'0');return `<div data-v="${v}">${v}</div>`;}).join('');for(const [p,val] of [['task',value],['end',endV],['rem',remind]]){const [h,m]=val?val.split(':'):['',''];$(`#${p}-hour-input`).innerHTML=items(24);$(`#${p}-minute-input`).innerHTML=items(60);$(`#${p}-hour-input`).value=h;$(`#${p}-minute-input`).value=m;}}
 function selectedEnd(){const hour=$('#end-hour-input').value,minute=$('#end-minute-input').value;return hour?`${hour}:${minute||'00'}`:'';}
 function selectedTime(){const hour=$('#task-hour-input').value,minute=$('#task-minute-input').value;return hour?`${hour}:${minute||'00'}`:'';}
-function openDialog(type,task=null,weekday=null){editingWeekday=Number.isInteger(weekday)?weekday:null;modalType=type;editingTaskId=task?.id||null;dialogDate=task?.date?parseDate(task.date):new Date(selectedDate);$('#task-form').reset();fillGroups(task?.group||'');fillTime(task?.time||'',task?.remindAt||'20:00',task?.end||'');$('#repeat-days').style.display=type==='recurring'?'block':'none';$('.date-field').style.display=type==='dated'?'grid':'none';$('.reminder-field').style.display='grid';$('#dialog-kind').textContent=type==='recurring'?'שגרה קבועה':type==='general'?'רשימה כללית':'ליום מסוים';$('#dialog-title').textContent=task?'עריכת משימה':type==='recurring'?'משימה קבועה חדשה':type==='general'?'משימה כללית חדשה':'משימה חדשה';$('#task-title-input').value=task?.title||'';$('#reminder-input').value=task?.reminder||'none';$('#remind-date-input').value=task?.remindDate||iso(today);$('#delete-from-dialog').style.display=task?'block':'none';$('#panel-input').innerHTML='<option value="">ללא פינה</option>'+panels.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');const panelCtx=!!presetPanel&&!task;$('#panel-input').value=task?.panel||presetPanel||'';presetPanel=null;$('.panel-field').style.display=(panels.length&&!panelCtx)?'grid':'none';$('#task-date-display').textContent=dateName(dialogDate);$$('#repeat-days input').forEach(input=>input.checked=task?.days?.includes(Number(input.value))||false);$('#task-dialog').showModal();['task','end','rem'].forEach(p=>['hour','minute'].forEach(k=>{const w=$(`#${p}-${k}-input`);w.value=w.dataset.v||'';}));$('#type-switch').style.display=panelCtx?'grid':'none';setDialogType(type);if(matchMedia('(pointer:fine)').matches)$('#task-title-input').focus();}
-function saveTask(){const title=$('#task-title-input').value.trim();if(!title)return;const st=selectedTime(),en=selectedEnd();if(st&&en&&en<=st){showToast('שעת הסיום צריכה להיות אחרי שעת ההתחלה');return;}const existing=tasks.find(t=>t.id===editingTaskId),task=existing||{id:crypto.randomUUID(),done:{},createdAt:Date.now()};Object.assign(task,{title,type:modalType,time:st,end:st?en:'',reminder:$('#reminder-input').value,remindAt:$('#reminder-input').value==='day'?`${$('#rem-hour-input').value||'20'}:${$('#rem-minute-input').value||'00'}`:'',group:$('#group-input').value,panel:$('#panel-input').value||'',remindDate:modalType==='general'?($('#remind-date-input').value||iso(today)):''});delete task.date;delete task.days;if(modalType!=='general'||task.reminder==='none')delete task.remindDate;if(modalType==='dated')task.date=iso(dialogDate);if(modalType==='recurring'){task.days=$$('#repeat-days input:checked').map(i=>Number(i.value));if(!task.days.length){showToast('בחרי לפחות יום אחד');return;}}if(!existing)tasks.push(task);save();render();$('#task-dialog').close();showToast(existing?'המשימה עודכנה':'המשימה נשמרה');}
+function openDialog(type,task=null,weekday=null){editingWeekday=Number.isInteger(weekday)?weekday:null;modalType=type;editingTaskId=task?.id||null;dialogDate=task?.date?parseDate(task.date):new Date(selectedDate);$('#task-form').reset();fillGroups(task?.group||'');fillTime(task?.time||'',task?.remindAt||'20:00',task?.end||'');$('#repeat-days').style.display=type==='recurring'?'block':'none';$('.date-field').style.display=type==='dated'?'grid':'none';$('.reminder-field').style.display='grid';$('#dialog-kind').textContent=type==='recurring'?'שגרה קבועה':type==='general'?'רשימה כללית':'ליום מסוים';$('#dialog-title').textContent=task?'עריכת משימה':type==='recurring'?'משימה קבועה חדשה':type==='general'?'משימה כללית חדשה':'משימה חדשה';$('#task-title-input').value=task?.title||'';$('#reminder-input').value=task?.reminder||'none';$('#remind-date-input').value=task?.remindDate||iso(today);$('#delete-from-dialog').style.display=task?'block':'none';draftAttach=(task?.attach||[]).map(a=>({...a}));pendingFiles.clear();renderDraftChips();$('#app-picker').hidden=true;$('#attach-url').value='';$('#panel-input').innerHTML='<option value="">ללא פינה</option>'+panels.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');const panelCtx=!!presetPanel&&!task;$('#panel-input').value=task?.panel||presetPanel||'';presetPanel=null;$('.panel-field').style.display=(panels.length&&!panelCtx)?'grid':'none';$('#task-date-display').textContent=dateName(dialogDate);$$('#repeat-days input').forEach(input=>input.checked=task?.days?.includes(Number(input.value))||false);$('#task-dialog').showModal();['task','end','rem'].forEach(p=>['hour','minute'].forEach(k=>{const w=$(`#${p}-${k}-input`);w.value=w.dataset.v||'';}));$('#type-switch').style.display=panelCtx?'grid':'none';setDialogType(type);if(matchMedia('(pointer:fine)').matches)$('#task-title-input').focus();}
+function saveTask(){const title=$('#task-title-input').value.trim();if(!title)return;const st=selectedTime(),en=selectedEnd();if(st&&en&&en<=st){showToast('שעת הסיום צריכה להיות אחרי שעת ההתחלה');return;}const existing=tasks.find(t=>t.id===editingTaskId),task=existing||{id:crypto.randomUUID(),done:{},createdAt:Date.now()};Object.assign(task,{title,type:modalType,time:st,end:st?en:'',reminder:$('#reminder-input').value,remindAt:$('#reminder-input').value==='day'?`${$('#rem-hour-input').value||'20'}:${$('#rem-minute-input').value||'00'}`:'',group:$('#group-input').value,panel:$('#panel-input').value||'',remindDate:modalType==='general'?($('#remind-date-input').value||iso(today)):''});delete task.date;delete task.days;commitAttachments(task);if(modalType!=='general'||task.reminder==='none')delete task.remindDate;if(modalType==='dated')task.date=iso(dialogDate);if(modalType==='recurring'){task.days=$$('#repeat-days input:checked').map(i=>Number(i.value));if(!task.days.length){showToast('בחרי לפחות יום אחד');return;}}if(!existing)tasks.push(task);save();render();$('#task-dialog').close();showToast(existing?'המשימה עודכנה':'המשימה נשמרה');}
 function switchDrawer(view){$('#action-drawer').dataset.mode=view?'page':'menu';$$('.drawer-page').forEach(page=>page.classList.toggle('active',page.id===`${view}-drawer`));}
 function toggleDrawer(open,view=null){if(open)switchDrawer(view);$('#action-drawer').classList.toggle('open',open);$('#drawer-overlay').classList.toggle('open',open);}
 async function enableNotifications(){if(!('Notification'in window)){showToast('הדפדפן הזה לא תומך בהתראות');return;}const result=await Notification.requestPermission();if(result==='granted'){showToast('התזכורות הופעלו');scheduleReminders();notify('התזכורות פעילות','ככה ייראו ההתראות','test');subscribePush();}else showToast('אפשר לאפשר התראות בהגדרות הדפדפן');}
@@ -318,3 +318,104 @@ updateFmtVisibility();applyFmtSelection();
 
 /* חזרה לעמוד הראשי: התאריך חוזר להיום */
 document.addEventListener('click',e=>{const tab=e.target.closest('.tab');if(tab&&tab.dataset.view==='today'){selectedDate=new Date(today);calendarDate=new Date(today.getFullYear(),today.getMonth(),1);render();}});
+
+/* מרכז הקשרים: קישורים חכמים, קבצים ואפליקציות */
+const pendingFiles=new Map(),MAX_FILE=15*1024*1024;
+const ATT_ICON={zoom:'video',meet:'video',teams:'video',youtube:'video',maps:'pin',waze:'nav',whatsapp:'chat',doc:'file',web:'link'};
+const APPS={
+  waze:{name:'Waze',icon:'nav',ph:'כתובת או יעד לניווט',need:true,make:a=>`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`},
+  maps:{name:'Google Maps',icon:'pin',ph:'כתובת או יעד',need:true,make:a=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`},
+  whatsapp:{name:'WhatsApp',icon:'chat',ph:'מספר עם קידומת מדינה (אפשר להשאיר ריק)',make:a=>`https://wa.me/${a.replace(/\D/g,'')}`},
+  phone:{name:'חיוג',icon:'phone',ph:'מספר טלפון',need:true,make:a=>`tel:${a.replace(/[^\d+]/g,'')}`},
+  mail:{name:'מייל',icon:'mail',ph:'כתובת מייל',need:true,make:a=>`mailto:${a.trim()}`},
+  custom:{name:'',icon:'app',ph:'קישור או Deep Link, למשל myapp://pay',need:true,custom:true,make:a=>a.trim()}
+};
+function openDb(){return new Promise((res,rej)=>{const r=indexedDB.open('yomi-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
+async function putFile(id,blob){const db=await openDb();return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(blob,id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
+async function getFile(id){const db=await openDb();return new Promise((res,rej)=>{const r=db.transaction('files').objectStore('files').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});}
+async function delFile(id){try{const db=await openDb();return new Promise(res=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').delete(id);tx.oncomplete=()=>res();tx.onerror=()=>res();});}catch(e){}}
+async function gcFiles(){try{const db=await openDb(),keys=await new Promise(res=>{const r=db.transaction('files').objectStore('files').getAllKeys();r.onsuccess=()=>res(r.result);r.onerror=()=>res([]);}),used=new Set(tasks.flatMap(t=>(t.attach||[]).filter(a=>a.kind==='file').map(a=>a.id)));for(const k of keys)if(!used.has(k))await delFile(k);}catch(e){}}
+
+function normUrl(raw){raw=(raw||'').trim();if(!raw||/\s/.test(raw))return null;if(!/^[a-z][a-z0-9+.-]*:/i.test(raw)){if(!/^[^\s/]+\.[a-z]{2,}(\/|$|\?|#)/i.test(raw))return null;raw='https://'+raw;}try{return new URL(raw);}catch(e){return null;}}
+function parseLink(raw){
+  const u=normUrl(raw);if(!u||!/^https?:$/.test(u.protocol))return null;
+  const host=u.hostname.replace(/^www\./,''),q=u.searchParams;let path=u.pathname;try{path=decodeURIComponent(path);}catch(e){}
+  let kind='web',title=host;
+  if(/(^|\.)zoom\.(us|com)$/.test(host)){kind='zoom';title='פגישת Zoom';}
+  else if(host==='meet.google.com'){kind='meet';title='פגישת Google Meet';}
+  else if(/(^|\.)teams\.(microsoft|live)\.com$/.test(host)){kind='teams';title='פגישת Teams';}
+  else if(host==='maps.app.goo.gl'||(host==='goo.gl'&&path.startsWith('/maps'))||(/(^|\.)google\.[a-z.]+$/.test(host)&&path.startsWith('/maps'))){kind='maps';const m=path.match(/\/maps\/(?:place|search)\/([^/@]+)/),name=m?m[1].replace(/\+/g,' '):(q.get('q')||q.get('query')||'');title=name?`Google Maps: ${name}`:'מיקום ב-Google Maps';}
+  else if(host==='waze.com'||host.endsWith('.waze.com')){kind='waze';const d=q.get('q');title=d?`Waze: ${d}`:'ניווט ב-Waze';}
+  else if(host==='youtu.be'||host.endsWith('youtube.com')){kind='youtube';title='סרטון ב-YouTube';}
+  else if(host==='wa.me'||host==='api.whatsapp.com'){kind='whatsapp';title='WhatsApp';}
+  else if(host==='docs.google.com'){kind='doc';title=path.startsWith('/spreadsheets')?'גיליון Google':path.startsWith('/presentation')?'מצגת Google':'מסמך Google';}
+  else if(host==='drive.google.com'){kind='doc';title='Google Drive';}
+  return {url:u.href,kind,title:title.slice(0,80),host};
+}
+function chipHtml(a,taskId,removable){
+  const sub=a.kind==='link'?a.sub:a.kind,icon=a.icon||ATT_ICON[a.sub]||'link',web=a.kind==='link'&&['web','youtube','doc'].includes(a.sub)&&a.host;
+  const fav=web?`<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(a.host)}&sz=64" alt="" onload="this.previousElementSibling.style.display='none'" onerror="this.remove()">`:'';
+  return `<button type="button" class="chip k-${sub}" data-attach="${a.id}" data-task="${taskId||''}" title="${escapeHtml(a.host||a.name||'')}"><svg class="ic"><use href="#i-${icon}"/></svg>${fav}<span>${escapeHtml(a.title||a.name||'')}</span>${removable?'<i class="chip-x" role="button" data-remove="'+a.id+'" aria-label="הסרה"></i>':''}</button>`;
+}
+function chipsHtml(task){return task.attach&&task.attach.length?`<div class="chips">${task.attach.map(a=>chipHtml(a,task.id,false)).join('')}</div>`:'';}
+function renderDraftChips(){const box=$('#attach-chips');if(box)box.innerHTML=draftAttach.map(a=>chipHtml(a,'',true)).join('');}
+async function enrichTitle(a){
+  if(!API_BASE||a.kind!=='link'||!['web','youtube','doc'].includes(a.sub))return;
+  try{const r=await api('/api/meta?url='+encodeURIComponent(a.url)),t=((r&&r.title)||'').trim();if(!t)return;a.title=t.slice(0,60);renderDraftChips();if(tasks.some(x=>(x.attach||[]).includes(a))){save();render();}}catch(e){}
+}
+function addLinkToDraft(raw){const p=parseLink(raw);if(!p){showToast('לא זיהיתי קישור תקין');return false;}if(draftAttach.some(a=>a.url===p.url)){showToast('הקישור כבר צורף');return true;}const a={id:crypto.randomUUID(),kind:'link',sub:p.kind,url:p.url,title:p.title,host:p.host};draftAttach.push(a);renderDraftChips();enrichTitle(a);return true;}
+function addFilesToDraft(files){for(const f of files){if(f.size>MAX_FILE){showToast(`‘${f.name}’ גדול מדי (עד 15MB)`);continue;}const id=crypto.randomUUID();pendingFiles.set(id,f);draftAttach.push({id,kind:'file',name:f.name,title:f.name,mime:f.type||'',size:f.size,icon:/^image\//.test(f.type)?'image':'file'});}renderDraftChips();}
+function commitAttachments(task){const keep=new Set(draftAttach.map(a=>a.id));(task.attach||[]).filter(a=>a.kind==='file'&&!keep.has(a.id)).forEach(a=>delFile(a.id));for(const [id,f] of pendingFiles)if(keep.has(id))putFile(id,f).catch(()=>showToast('לא הצלחתי לשמור קובץ'));pendingFiles.clear();if(draftAttach.length)task.attach=draftAttach;else delete task.attach;}
+async function attachDirect(taskId,files,urlText){
+  const t=tasks.find(x=>x.id===taskId);if(!t)return;t.attach=t.attach||[];let n=0;
+  for(const f of files){if(f.size>MAX_FILE){showToast(`‘${f.name}’ גדול מדי (עד 15MB)`);continue;}const id=crypto.randomUUID();try{await putFile(id,f);t.attach.push({id,kind:'file',name:f.name,title:f.name,mime:f.type||'',size:f.size,icon:/^image\//.test(f.type)?'image':'file'});n++;}catch(e){showToast('לא הצלחתי לשמור קובץ');}}
+  const p=!files.length&&urlText?parseLink(urlText.split('\n')[0].trim()):null;
+  if(p&&!t.attach.some(a=>a.url===p.url)){const a={id:crypto.randomUUID(),kind:'link',sub:p.kind,url:p.url,title:p.title,host:p.host};t.attach.push(a);n++;enrichTitle(a);}
+  if(!t.attach.length)delete t.attach;if(n){save();render();showToast('צורף למשימה');}
+}
+async function openAttachment(id,taskId){
+  const task=tasks.find(t=>t.id===taskId),a=(task?.attach||[]).find(x=>x.id===id)||draftAttach.find(x=>x.id===id);if(!a)return;
+  if(a.kind==='file'){const w=window.open('','_blank'),blob=pendingFiles.get(id)||await getFile(id).catch(()=>null);if(!blob){if(w)w.close();showToast('הקובץ הזה נשמר במכשיר אחר');return;}const url=URL.createObjectURL(blob);if(w)w.location.href=url;else location.href=url;setTimeout(()=>URL.revokeObjectURL(url),60000);return;}
+  if(/^https?:/i.test(a.url))window.open(a.url,'_blank','noopener');else location.href=a.url;
+}
+document.addEventListener('click',e=>{
+  const x=e.target.closest('[data-remove]');
+  if(x){e.preventDefault();const id=x.dataset.remove;draftAttach=draftAttach.filter(a=>a.id!==id);pendingFiles.delete(id);renderDraftChips();return;}
+  const chip=e.target.closest('.chip[data-attach]');if(!chip||fmtOn)return;
+  e.preventDefault();openAttachment(chip.dataset.attach,chip.dataset.task);
+});
+/* הוספת קישור: הדבקה, Enter או כפתור */
+const addUrlNow=()=>{const inp=$('#attach-url'),v=inp.value.trim();if(v&&addLinkToDraft(v))inp.value='';};
+$('#attach-url').addEventListener('paste',()=>setTimeout(()=>{const v=$('#attach-url').value.trim();if(v&&parseLink(v))addUrlNow();},0));
+$('#attach-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUrlNow();}});
+$('#attach-add-link').addEventListener('click',addUrlNow);
+$('#attach-file').addEventListener('change',e=>{addFilesToDraft([...e.target.files]);e.target.value='';});
+/* אפליקציות */
+$('#attach-app-btn').addEventListener('click',()=>{const p=$('#app-picker');p.hidden=!p.hidden;});
+$('#app-picker').addEventListener('click',e=>{const b=e.target.closest('[data-app]');if(!b)return;appPick=b.dataset.app;const app=APPS[appPick];$$('#app-picker [data-app]').forEach(x=>x.classList.toggle('active',x===b));$('#app-name').hidden=!app.custom;$('#app-arg').placeholder=app.ph;$('#app-arg').focus();});
+$('#app-arg').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#app-add').click();}});
+$('#app-add').addEventListener('click',()=>{
+  const app=APPS[appPick];if(!app){showToast('בחרי קודם אפליקציה');return;}
+  const arg=$('#app-arg').value.trim();if(app.need&&!arg){showToast('חסר ערך לשדה');return;}
+  let url=app.make(arg),title=app.custom?$('#app-name').value.trim():(arg?`${app.name}: ${arg}`:app.name);
+  if(app.custom){if(!title){showToast('נתנו שם לאפליקציה?');return;}if(!/^[a-z][a-z0-9+.-]*:/i.test(url)){const u=normUrl(url);if(!u){showToast('הקישור לא תקין');return;}url=u.href;}}
+  draftAttach.push({id:crypto.randomUUID(),kind:'app',app:appPick,icon:app.icon,title:title.slice(0,60),url});
+  renderDraftChips();$('#app-arg').value='';$('#app-name').value='';$('#app-picker').hidden=true;appPick=null;
+});
+/* גרירה והדבקה */
+const DROP='#task-dialog,.task-row';
+document.addEventListener('dragover',e=>{const tgt=e.target.closest?.(DROP);if(tgt&&[...(e.dataTransfer?.types||[])].some(t=>t==='Files'||t==='text/uri-list'||t==='text/plain')){e.preventDefault();tgt.classList.add('drop-hover');}});
+document.addEventListener('dragleave',e=>{e.target.closest?.(DROP)?.classList.remove('drop-hover');});
+document.addEventListener('drop',async e=>{
+  const tgt=e.target.closest?.(DROP);if(!tgt)return;e.preventDefault();$$('.drop-hover').forEach(x=>x.classList.remove('drop-hover'));
+  const files=[...(e.dataTransfer.files||[])],url=e.dataTransfer.getData('text/uri-list')||e.dataTransfer.getData('text/plain')||'';
+  if(tgt.id==='task-dialog'){if(files.length)addFilesToDraft(files);else if(url)addLinkToDraft(url.split('\n')[0].trim());}
+  else await attachDirect(tgt.dataset.id,files,url);
+});
+document.addEventListener('paste',e=>{
+  if(!$('#task-dialog').open)return;const t=e.target,files=[...(e.clipboardData?.files||[])];
+  if(files.length){e.preventDefault();addFilesToDraft(files);return;}
+  if(t.id==='attach-url'||t.matches?.('input,textarea,select'))return;
+  const txt=(e.clipboardData?.getData('text')||'').trim();if(parseLink(txt)){e.preventDefault();addLinkToDraft(txt);}
+});
+setTimeout(gcFiles,5000);setInterval(gcFiles,3600000);

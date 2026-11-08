@@ -402,3 +402,30 @@ body.fmt-open .fmt-bar{box-shadow:-6px 8px 28px rgba(18,35,63,.24)}
  .wk-task bdi{display:inline;flex:1;min-width:0}
  .wk-empty{text-align:start}
 }
+
+/* v16: מרכז הקשרים */
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;min-width:0}
+.chip{display:inline-flex;align-items:center;gap:6px;max-width:100%;min-height:30px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:#fff;color:var(--ink);font-size:.82rem;font-weight:600;cursor:pointer}
+.chip .ic{width:15px;height:15px;color:var(--plum)}
+.chip img{width:16px;height:16px;border-radius:4px;flex:none}
+.chip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px}
+.chip:hover{border-color:var(--plum)}
+.chip.k-zoom,.chip.k-meet,.chip.k-teams{background:#e8f0ff}
+.chip.k-maps,.chip.k-waze,.chip.k-app{background:#e3f6ee}
+.chip.k-file{background:#eef2f8}
+.chip-x{position:relative;flex:none;width:18px;height:18px;border-radius:50%;background:rgba(18,35,63,.08);margin-inline-start:2px}
+.chip-x::before,.chip-x::after{content:"";position:absolute;inset:0;margin:auto;width:9px;height:2px;border-radius:2px;background:currentColor;transform:rotate(45deg)}
+.chip-x::after{transform:rotate(-45deg)}
+.attach-field{display:grid;gap:8px;padding:12px;border:1px dashed #b7cfe8;border-radius:16px;background:#fbfdff}
+.attach-row{display:flex;gap:8px;align-items:center}
+.attach-row input{flex:1;min-width:0}
+.attach-btn{min-height:46px;padding:0 14px;flex:none}
+.attach-pill{display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:0 14px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:.9rem;cursor:pointer;color:var(--ink)}
+.attach-pill .ic{width:16px;height:16px;color:var(--plum)}
+.attach-hint{margin:0;font-size:.78rem;color:var(--muted)}
+.app-picker{display:grid;gap:8px;padding:10px;border-radius:12px;background:#eef4fc}
+.app-presets{display:flex;flex-wrap:wrap;gap:6px}
+.app-presets button{min-height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-weight:600;font-size:.85rem}
+.app-presets button.active{background:var(--plum);border-color:var(--plum);color:#fff}
+.drop-hover{outline:2px dashed var(--plum);outline-offset:-4px;background-color:#eaf4ff}
+.task-row .chips{margin-top:6px}
