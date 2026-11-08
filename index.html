@@ -96,7 +96,7 @@
       </section>
 
       <section class="view" id="inbox-view">
-        <div class="section-heading"><div><p class="eyebrow">בלי תאריך</p><h2>משימות כלליות</h2></div></div>
+        <div class="section-heading"><div><h2>משימות כלליות</h2></div></div>
         <section class="card"><div id="general-tasks" class="task-list"></div><button class="add-round add-task" data-type="general" aria-label="הוספת משימה כללית">＋</button></section>
       </section>
     </main>
@@ -105,10 +105,10 @@
     <dialog id="quick-dialog" class="task-dialog quick-dialog"><form id="quick-form" method="dialog"><div class="dialog-heading"><div><p class="eyebrow">רשימה מהירה</p><h2>זריזה</h2></div><button type="button" class="close-button close-quick" aria-label="סגירה"></button></div><label>שם (לא חובה)<input id="quick-title" maxlength="40" placeholder="למשל: לסופר" autocomplete="off" /></label><label>פריט בכל שורה<textarea id="quick-items" rows="6" placeholder="חלב&#10;לחם&#10;ביצים"></textarea></label><div class="dialog-actions"><button type="button" class="secondary-button close-quick">ביטול</button><button class="primary-button">שמירה בדף הרשימות</button></div></form></dialog>
     <dialog id="task-dialog" class="task-dialog">
       <form id="task-form" method="dialog">
-        <div id="type-switch" class="type-switch"><button type="button" data-type="dated" class="active">ליום</button><button type="button" data-type="general">כללית</button><button type="button" data-type="recurring">קבועה</button></div>
+        <div id="type-switch" class="type-switch"><button type="button" data-type="dated" class="active">חד-פעמית</button><button type="button" data-type="recurring">קבועה</button></div>
         <div class="dialog-heading"><div><p class="eyebrow" id="dialog-kind"></p><h2 id="dialog-title">משימה חדשה</h2></div><button type="button" class="close-button close-dialog" aria-label="סגירה">×</button></div>
         <label>מה תרצי לעשות?<input id="task-title-input" name="title" required maxlength="80" placeholder="למשל: אימון פילאטיס" autocomplete="off" /></label>
-        <div class="form-grid"><label>שעה <div class="time-picker"><div id="task-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="task-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="date-field">תאריך <output id="task-date-display" class="date-display"></output></label></div>
+        <div class="form-grid"><label>התחלה <div class="time-picker"><div id="task-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="task-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="end-field">סיום <div class="time-picker"><div id="end-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="end-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="date-field">תאריך <output id="task-date-display" class="date-display"></output></label></div>
         <label class="reminder-field">תזכורת <select id="reminder-input" name="reminder"><option value="none">ללא תזכורת</option><option value="0">בזמן המשימה</option><option value="5">5 דקות לפני</option><option value="15">15 דקות לפני</option><option value="30">30 דקות לפני</option><option value="60">שעה לפני</option><option value="day">יום לפני</option></select></label>
         <label id="remind-date-field" class="remind-date-field">תאריך התזכורת<input type="date" id="remind-date-input"></label>
         <div id="daybefore-field" class="daybefore-field"><span class="field-label">באיזו שעה ביום לפני?</span><div class="time-picker"><div id="rem-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="rem-minute-input" class="wheel" aria-label="דקות"></div></div></div>

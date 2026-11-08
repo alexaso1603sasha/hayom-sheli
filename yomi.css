@@ -374,3 +374,31 @@ body.fmt-open .fmt-bar{box-shadow:-6px 8px 28px rgba(18,35,63,.24)}
 .task-row.swipe-ready{background:#dff0ff}
 .task-row[style*="--pc"]{border-inline-start:4px solid var(--pc);background:var(--tbg,color-mix(in srgb,var(--pc) 12%,#fff))}
 .wk-task[style*="--pc"],.week-task[style*="--pc"]{background:var(--tbg,color-mix(in srgb,var(--pc) 20%,#fff));border-inline-start:3px solid var(--pc)}
+
+/* v15: סרגל עיצוב בתוך המסגרת, שעות קטנות, סיום, יומן שבועי לטלפון */
+.fmt-bar{box-sizing:border-box;width:108px;padding:8px}
+.fmt-bar:not(.open){width:auto}
+.fmt-tools{width:100%}
+.fmt-swatches{grid-template-columns:repeat(3,1fr);justify-items:center;width:100%;gap:6px}
+.fmt-swatch,input[type=color].fmt-custom{width:24px;height:24px;min-height:24px;min-width:0}
+.fmt-label{align-self:stretch;text-align:start}
+.fmt-hint{align-self:stretch;max-width:none;text-align:center}
+.fmt-row{justify-content:center}
+.type-switch{grid-template-columns:1fr 1fr}
+.form-grid{grid-template-columns:1fr 1fr;gap:10px}
+.date-field{grid-column:1/-1}
+.time-picker{gap:4px}
+.time-picker input.time-type{width:50px;min-height:40px;font-size:1.1rem;border-radius:12px}
+.time-col small{height:16px;font-size:.7rem}
+.time-picker span{margin-top:16px;font-size:1.1rem}
+@media (max-width:720px){
+ .week-view{grid-template-columns:1fr;gap:10px}
+ .wk-day{flex-direction:column;min-height:0;padding:10px 12px;gap:8px}
+ .wk-head{flex:none;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:8px}
+ .wk-head strong{font-size:1.15rem}.wk-head small{font-size:.9rem}
+ .wk-tasks{gap:6px}
+ .wk-task{display:flex;align-items:baseline;gap:8px;padding:6px 10px;font-size:.92rem}
+ .wk-task .wk-time{display:inline;flex:none;margin:0}
+ .wk-task bdi{display:inline;flex:1;min-width:0}
+ .wk-empty{text-align:start}
+}
