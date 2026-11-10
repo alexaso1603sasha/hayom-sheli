@@ -14,7 +14,7 @@ const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parseDate = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
 let today = new Date(); today.setHours(0, 0, 0, 0);
-let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set(), draftAttach = [], appPick = null, moveCtx = null;
+let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set(), draftAttach = [], appPick = null, moveCtx = null, lastPutSig = '';
 let selectedDate = new Date(today), calendarDate = new Date(today.getFullYear(), today.getMonth(), 1), dialogDate = new Date(today), modalType = 'dated', editingTaskId = null, timeoutIds = [];
 
 const sample = [
@@ -73,10 +73,11 @@ let syncTimer=null;
 const getCode=()=>localStorage.getItem(syncKey)||'';
 const tzName=()=>{try{return Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';}catch(e){return 'UTC';}};
 function syncStatus(text){const el=$('#sync-status');if(el)el.textContent=text;}
-async function api(path,options={}){const res=await fetch(API_BASE+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});if(!res.ok)throw new Error('http-'+res.status);return res.json();}
+async function api(path,options={}){const res=await fetch(API_BASE+path,{...options,headers:{'Content-Type':'application/json',...(options.headers||{})}});if(!res.ok){let m='';try{m=(await res.json()).error||'';}catch(e){}throw new Error(`http-${res.status}${m?': '+m:''}`);}return res.json();}
+function syncErr(e){const m=String((e&&e.message)||e);return /limit/i.test(m)?'מכסת הכתיבה היומית של Cloudflare נגמרה והיא תתאפס בלילה. אפשר להמשיך להשתמש באתר.':m;}
 function queueSync(){if(!API_BASE||!getCode())return;clearTimeout(syncTimer);syncTimer=setTimeout(pushData,800);}
-async function putData(){await api('/api/sync',{method:'PUT',body:JSON.stringify({code:getCode(),tasks,groups,lists,panels,tomb:getTomb(),tz:tzName(),updatedAt:Number(localStorage.getItem(updatedKey)||Date.now())})});}
-async function pushData(){try{const d=await api('/api/sync?code='+encodeURIComponent(getCode()));if(d&&d.tomb!==undefined&&d.updatedAt&&Number(localStorage.getItem(updatedKey)||0)){const before=JSON.stringify(cols());mergeIn(d);if(before!==JSON.stringify(cols())){scheduleReminders();render();}}await putData();syncStatus('מסונכרן ✓');return true;}catch(e){syncStatus('הסנכרון נכשל. ננסה שוב בשמירה הבאה');return false;}}
+async function putData(force){const sig=sigOf(cols());if(!force&&sig===lastPutSig)return;await api('/api/sync',{method:'PUT',body:JSON.stringify({code:getCode(),tasks,groups,lists,panels,tomb:getTomb(),tz:tzName(),updatedAt:Number(localStorage.getItem(updatedKey)||Date.now())})});lastPutSig=sig;}
+async function pushData(){try{const d=await api('/api/sync?code='+encodeURIComponent(getCode()));if(d&&d.tomb!==undefined&&d.updatedAt&&Number(localStorage.getItem(updatedKey)||0)){const before=JSON.stringify(cols());mergeIn(d);if(before!==JSON.stringify(cols())){scheduleReminders();render();}}await putData();syncStatus('מסונכרן ✓');return true;}catch(e){syncStatus('הסנכרון נכשל: '+syncErr(e));return false;}}
 async function pullData(){
   if(!API_BASE||!getCode())return 'off';
   try{
@@ -92,9 +93,9 @@ async function pullData(){
     const after=JSON.stringify(cols());
     localStorage.setItem(updatedKey,String(Math.max(localUpdated,data.updatedAt)));
     if(before!==after){scheduleReminders();render();}
-    if(JSON.stringify({tasks:data.tasks||[],groups:data.groups||[],lists:data.lists||[],panels:data.panels||[]})!==after)await putData();
+    if(sigOf(data)!==sigOf(cols()))await putData();else lastPutSig=sigOf(cols());
     return before!==after?'applied':'same';
-  }catch(e){return 'error';}
+  }catch(e){syncStatus('הסנכרון נכשל: '+syncErr(e));return 'error';}
 }
 function b64ToBytes(b64){const pad='='.repeat((4-b64.length%4)%4),raw=atob((b64+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
 async function subscribePush(){
@@ -199,6 +200,7 @@ async function diagnose(){const out=$('#diag-result'),lines=[],add=(ok,t)=>lines
   const hasN='Notification'in window;add(hasN&&Notification.permission==='granted',hasN?'התראות מאושרות במכשיר':'הדפדפן לא תומך בהתראות (באייפון צריך להתקין למסך הבית ולפתוח משם)');
   let reg=null,sub=null;try{reg='serviceWorker'in navigator?await navigator.serviceWorker.getRegistration():null;sub=reg&&reg.pushManager?await reg.pushManager.getSubscription():null;}catch(e){}
   add(!!(reg&&reg.active),'שירות הרקע פעיל');add(!!sub,'המכשיר רשום להתראות מהשרת');add(!!getCode(),'קוד סנכרון מוגדר');add(!!API_BASE,'כתובת שרת מוגדרת');show();
+  if(API_BASE&&getCode()){try{await api('/api/sync?code='+encodeURIComponent(getCode()));add(true,'קריאת נתונים מהשרת עובדת');await putData(true);add(true,'שמירת נתונים בשרת עובדת');}catch(e){add(false,'סנכרון: '+syncErr(e));}show();}
   if(API_BASE&&getCode()){try{const r=await api('/api/test',{method:'POST',body:JSON.stringify({code:getCode()})});if(r.subs===undefined)add(false,'השרת בגרסה ישנה: יש להדביק מחדש את worker.js ב-Cloudflare');else if(!r.subs)add(false,'אין מכשיר רשום בשרת. לחצי "חיבור" בסנכרון שוב');else if(r.ok)add(true,`התראת בדיקה נשלחה מהשרת (${r.ok} מתוך ${r.subs})`);else add(false,`השרת לא הצליח לשלוח (קוד ${r.fail.join(', ')}). 403 = מפתחות VAPID לא תואמים, 404/410 = ההרשמה פגה, ולכן צריך ללחוץ "חיבור" שוב`);}catch(e){add(false,'אין חיבור לשרת');}}
   else if(hasN&&Notification.permission==='granted'){await notify('בדיקת התראות','ההתראות במכשיר עובדות ✓','test-local');add(true,'נשלחה התראת בדיקה מקומית');}
   show();}
@@ -472,3 +474,4 @@ document.addEventListener('click',e=>{
   const q=e.target.closest('#move-dialog [data-days]');if(q){const d=new Date(selectedDate);d.setDate(d.getDate()+Number(q.dataset.days));moveTaskTo(d);return;}
   if(e.target.closest('#move-go')){const v=$('#move-date').value;if(v)moveTaskTo(parseDate(v));}
 });
+function sigOf(o){const out={};for(const c of ['tasks','groups','lists','panels'])out[c]=(o[c]||[]).map(it=>[it.id,JSON.stringify(it)]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);return JSON.stringify(out);}
