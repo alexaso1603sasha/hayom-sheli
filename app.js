@@ -1,3 +1,7 @@
+const APP_VERSION='20';
+(function(){const show=msg=>{let b=document.getElementById('err-banner');if(!b){b=document.createElement('div');b.id='err-banner';b.style.cssText='position:fixed;inset:auto 8px 8px 8px;z-index:9999;background:#7a1f1f;color:#fff;padding:10px 14px;border-radius:12px;font:14px/1.4 sans-serif;direction:rtl;white-space:pre-wrap;-webkit-user-select:text;user-select:text';document.body.appendChild(b);}b.textContent=msg;};
+window.addEventListener('error',e=>{if(e.message)show('שגיאה באפליקציה: '+e.message+'\n(אם משהו לא עובד, צלמי את ההודעה ושלחי לי)');});
+const meta=document.querySelector('meta[name="app-version"]');if(!meta||meta.content!==APP_VERSION)show('הקבצים באתר לא תואמים: צריך להעלות את index.html ואת app.js יחד (גרסה '+APP_VERSION+').');})();
 // כתובת השרת של ההתראות (Cloudflare Worker). משאירים ריק עד שהשרת מוכן.
 // דוגמה: const API_BASE = 'https://hayom-sheli-push.YOURNAME.workers.dev';
 const API_BASE = 'https://hayom-sheli-push.alexaso1603.workers.dev';
@@ -10,7 +14,7 @@ const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const iso = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 const parseDate = value => { const [y, m, d] = value.split('-').map(Number); return new Date(y, m - 1, d); };
 let today = new Date(); today.setHours(0, 0, 0, 0);
-let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set(), draftAttach = [], appPick = null;
+let nudgeIndex = 0, nudgeTimer = null, editingWeekday = null, delCtx = null, calMode = 'month', fmtOn = false, fmtSel = new Set(), draftAttach = [], appPick = null, moveCtx = null;
 let selectedDate = new Date(today), calendarDate = new Date(today.getFullYear(), today.getMonth(), 1), dialogDate = new Date(today), modalType = 'dated', editingTaskId = null, timeoutIds = [];
 
 const sample = [
@@ -36,7 +40,7 @@ function dateName(date){return `${days[date.getDay()]}, ${date.getDate()} ב${mo
 function sorted(list){return [...list].sort((a,b)=>(a.time||'99:99').localeCompare(b.time||'99:99'));}
 function escapeHtml(value){return String(value).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#039;','"':'&quot;'}[c]));}
 function getGroup(task){return groups.find(g=>g.id===task.group);}
-function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date);return `<div class="task-row ${done?'done':''}" data-id="${task.id}" data-wd="${(date||selectedDate).getDay()}"${fmtAttr(task,(date||selectedDate).getDay())}><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main"><span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span>${chipsHtml(task)}</div>${task.time?`<span class="task-time" dir="ltr">${task.time}${task.end?`–${task.end}`:''}</span>`:''}<button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div>`;}
+function taskRow(task,date,general=false){const done=general?!!task.done?.general:doneOn(task,date),group=getGroup(task),reminder=task.reminder&&task.reminder!=='none'?' · תזכורת':'',meta=general?'כללית':task.type==='recurring'?'משימה קבועה':dateName(date),wd=(date||selectedDate).getDay(),time=task.time?`<span class="task-time" dir="ltr">${task.time}${task.end?`–${task.end}`:''}</span>`:'';return `<div class="swipe-wrap"><div class="swipe-bg sb-done"><svg class="ic"><use href="#i-check"/></svg> הושלם</div><div class="swipe-bg sb-move"><svg class="ic"><use href="#i-calendar"/></svg> יום אחר</div><div class="task-row ${done?'done':''}" data-id="${task.id}" data-wd="${wd}"${fmtAttr(task,wd)}><input class="task-check" type="checkbox" ${done?'checked':''} aria-label="סימון משימה כהושלמה">${group?`<i class="group-dot" style="--group-color:${group.color}" title="${escapeHtml(group.name)}"></i>`:''}<div class="task-main">${time}<span class="task-name">${escapeHtml(task.title)}</span><span class="task-meta">${meta}${group?` · ${escapeHtml(group.name)}`:''}${reminder}</span>${chipsHtml(task)}</div><button class="edit-task" aria-label="עריכת משימה">✎</button><button class="delete-task" aria-label="מחיקת משימה">×</button></div></div>`;}
 function renderDateStrip(){const holder=$('#date-strip');holder.innerHTML='';for(let i=-3;i<=5;i++){const d=new Date(today);d.setDate(today.getDate()+i);holder.insertAdjacentHTML('beforeend',`<button class="date-pill ${iso(d)===iso(selectedDate)?'selected':''} ${iso(d)===iso(today)?'today':''}" data-date="${iso(d)}"><span>${shortDays[d.getDay()]}</span><strong>${d.getDate()}</strong></button>`);}}
 function renderToday(){const dayAll=sorted(tasks.filter(t=>taskOnDate(t,selectedDate))),list=dayAll.filter(t=>!t.panel),complete=list.filter(t=>doneOn(t,selectedDate)).length;$('#schedule-title').textContent=iso(selectedDate)===iso(today)?'היום':dateName(selectedDate);$('#daily-progress').textContent=list.length?`${complete} מתוך ${list.length} הושלמו`:'יום פנוי';$('#daily-tasks').innerHTML=list.length?list.map(t=>taskRow(t,selectedDate)).join(''):'<div class="empty-state">אין כאן עדיין משימות. יום נעים ומרווח ✨</div>';const pending=sorted(dayAll.filter(t=>!doneOn(t,selectedDate))),nowD=new Date(),nowHM=`${String(nowD.getHours()).padStart(2,'0')}:${String(nowD.getMinutes()).padStart(2,'0')}`,upcoming=iso(selectedDate)===iso(today)?pending.filter(t=>!t.time||(t.end||t.time)>=nowHM):pending,next=upcoming[0],overdue=pending.length-upcoming.length;$('#next-task').innerHTML=next?`<strong>${escapeHtml(next.title)}</strong><span>${next.time||'ללא שעה'}${next.type==='recurring'?' · משימה קבועה':''}</span>`:pending.length?`<strong>אין עוד משימות להמשך היום</strong><span>${overdue} ${overdue===1?'משימה שעברה שעתה ממתינה':'משימות שעברה שעתן ממתינות'} לסימון</span>`:'<strong>סיימת הכול להיום ✨</strong><span>זמן לנשום קצת.</span>';}
 function renderGeneral(){const list=tasks.filter(t=>t.type==='general'&&!t.panel);$('#general-tasks').innerHTML=list.length?list.map(t=>taskRow(t,null,true)).join(''):'<div class="empty-state">רשמי כאן כל דבר שתרצי לזכור, בלי להתחייב לתאריך.</div>';}
@@ -48,7 +52,7 @@ function fillGroups(selected=''){$('#group-input').innerHTML='<option value="">�
 function fillTime(value='',remind='20:00',endV=''){const items=n=>'<div data-v="">--</div>'+Array.from({length:n},(_,i)=>{const v=String(i).padStart(2,'0');return `<div data-v="${v}">${v}</div>`;}).join('');for(const [p,val] of [['task',value],['end',endV],['rem',remind]]){const [h,m]=val?val.split(':'):['',''];$(`#${p}-hour-input`).innerHTML=items(24);$(`#${p}-minute-input`).innerHTML=items(60);$(`#${p}-hour-input`).value=h;$(`#${p}-minute-input`).value=m;}}
 function selectedEnd(){const hour=$('#end-hour-input').value,minute=$('#end-minute-input').value;return hour?`${hour}:${minute||'00'}`:'';}
 function selectedTime(){const hour=$('#task-hour-input').value,minute=$('#task-minute-input').value;return hour?`${hour}:${minute||'00'}`:'';}
-function openDialog(type,task=null,weekday=null){editingWeekday=Number.isInteger(weekday)?weekday:null;modalType=type;editingTaskId=task?.id||null;dialogDate=task?.date?parseDate(task.date):new Date(selectedDate);$('#task-form').reset();fillGroups(task?.group||'');fillTime(task?.time||'',task?.remindAt||'20:00',task?.end||'');$('#repeat-days').style.display=type==='recurring'?'block':'none';$('.date-field').style.display=type==='dated'?'grid':'none';$('.reminder-field').style.display='grid';$('#dialog-kind').textContent=type==='recurring'?'שגרה קבועה':type==='general'?'רשימה כללית':'ליום מסוים';$('#dialog-title').textContent=task?'עריכת משימה':type==='recurring'?'משימה קבועה חדשה':type==='general'?'משימה כללית חדשה':'משימה חדשה';$('#task-title-input').value=task?.title||'';$('#reminder-input').value=task?.reminder||'none';$('#remind-date-input').value=task?.remindDate||iso(today);$('#delete-from-dialog').style.display=task?'block':'none';draftAttach=(task?.attach||[]).map(a=>({...a}));pendingFiles.clear();renderDraftChips();$('#app-picker').hidden=true;$('#attach-url').value='';$('#panel-input').innerHTML='<option value="">ללא פינה</option>'+panels.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');const panelCtx=!!presetPanel&&!task;$('#panel-input').value=task?.panel||presetPanel||'';presetPanel=null;$('.panel-field').style.display=(panels.length&&!panelCtx)?'grid':'none';$('#task-date-display').textContent=dateName(dialogDate);$$('#repeat-days input').forEach(input=>input.checked=task?.days?.includes(Number(input.value))||false);$('#task-dialog').showModal();['task','end','rem'].forEach(p=>['hour','minute'].forEach(k=>{const w=$(`#${p}-${k}-input`);w.value=w.dataset.v||'';}));$('#type-switch').style.display=panelCtx?'grid':'none';setDialogType(type);if(matchMedia('(pointer:fine)').matches)$('#task-title-input').focus();}
+function openDialog(type,task=null,weekday=null){editingWeekday=Number.isInteger(weekday)?weekday:null;modalType=type;editingTaskId=task?.id||null;dialogDate=task?.date?parseDate(task.date):new Date(selectedDate);$('#task-form').reset();fillGroups(task?.group||'');fillTime(task?.time||'',task?.remindAt||'20:00',task?.end||'');$('#repeat-days').style.display=type==='recurring'?'block':'none';$('.date-field').style.display=type==='dated'?'grid':'none';$('.reminder-field').style.display='grid';$('#dialog-kind').textContent=type==='recurring'?'שגרה קבועה':type==='general'?'רשימה כללית':'ליום מסוים';$('#dialog-title').textContent=task?'עריכת משימה':type==='recurring'?'משימה קבועה חדשה':type==='general'?'משימה כללית חדשה':'משימה חדשה';$('#task-title-input').value=task?.title||'';$('#reminder-input').value=task?.reminder||'none';$('#remind-date-input').value=task?.remindDate||iso(today);$('#delete-from-dialog').style.display=task?'block':'none';draftAttach=(task?.attach||[]).map(a=>({...a}));pendingFiles.clear();renderDraftChips();$('#app-picker').hidden=true;$('#attach-url').value='';$('#panel-input').innerHTML='<option value="">ללא פינה</option>'+panels.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');const panelCtx=!!presetPanel&&!task;$('#panel-input').value=task?.panel||presetPanel||'';presetPanel=null;$('.panel-field').style.display=(panels.length&&!panelCtx)?'grid':'none';$('#task-date-input').value=iso(dialogDate);$$('#repeat-days input').forEach(input=>input.checked=task?.days?.includes(Number(input.value))||false);$('#task-dialog').showModal();['task','end','rem'].forEach(p=>['hour','minute'].forEach(k=>{const w=$(`#${p}-${k}-input`);w.value=w.dataset.v||'';}));$('#type-switch').style.display=panelCtx?'grid':'none';setDialogType(type);if(matchMedia('(pointer:fine)').matches)$('#task-title-input').focus();}
 function saveTask(){const title=$('#task-title-input').value.trim();if(!title)return;const st=selectedTime(),en=selectedEnd();if(st&&en&&en<=st){showToast('שעת הסיום צריכה להיות אחרי שעת ההתחלה');return;}const existing=tasks.find(t=>t.id===editingTaskId),task=existing||{id:crypto.randomUUID(),done:{},createdAt:Date.now()};Object.assign(task,{title,type:modalType,time:st,end:st?en:'',reminder:$('#reminder-input').value,remindAt:$('#reminder-input').value==='day'?`${$('#rem-hour-input').value||'20'}:${$('#rem-minute-input').value||'00'}`:'',group:$('#group-input').value,panel:$('#panel-input').value||'',remindDate:modalType==='general'?($('#remind-date-input').value||iso(today)):''});delete task.date;delete task.days;commitAttachments(task);if(modalType!=='general'||task.reminder==='none')delete task.remindDate;if(modalType==='dated')task.date=iso(dialogDate);if(modalType==='recurring'){task.days=$$('#repeat-days input:checked').map(i=>Number(i.value));if(!task.days.length){showToast('בחרי לפחות יום אחד');return;}}if(!existing)tasks.push(task);save();render();$('#task-dialog').close();showToast(existing?'המשימה עודכנה':'המשימה נשמרה');}
 function switchDrawer(view){$('#action-drawer').dataset.mode=view?'page':'menu';$$('.drawer-page').forEach(page=>page.classList.toggle('active',page.id===`${view}-drawer`));}
 function toggleDrawer(open,view=null){if(open)switchDrawer(view);$('#action-drawer').classList.toggle('open',open);$('#drawer-overlay').classList.toggle('open',open);}
@@ -262,11 +266,13 @@ document.addEventListener('click',e=>{const wd=e.target.closest('.wk-day');if(!w
 ['#prev-month','#next-month'].forEach((sel,i)=>$(sel).addEventListener('click',e=>{if(calMode!=='week')return;e.stopImmediatePropagation();selectedDate=new Date(selectedDate.getTime());selectedDate.setDate(selectedDate.getDate()+(i?7:-7));calendarDate=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);render();},true));
 renderWeekView();
 
-/* החלקה בטלפון: ימינה = הושלם */
-(()=>{let row=null,x0=0,y0=0,dx=0,moving=false,raf=0;
-  document.addEventListener('touchstart',e=>{const r=e.target.closest?.('.task-row');if(!r||e.touches.length!==1||e.target.closest('button,input'))return;row=r;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;moving=false;},{passive:true});
-  document.addEventListener('touchmove',e=>{if(!row)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;if(!moving){if(Math.abs(my)>10&&Math.abs(my)>Math.abs(mx)){row=null;return;}if(mx<10)return;moving=true;row.style.transition='none';}dx=Math.max(0,Math.min(130,mx));if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(!row)return;row.style.transform=`translate3d(${dx}px,0,0)`;row.classList.toggle('swipe-ready',dx>=80);});},{passive:true});
-  document.addEventListener('touchend',()=>{if(!row)return;const r=row,go=dx>=80;row=null;r.style.transition='transform .22s cubic-bezier(.2,.8,.2,1)';r.style.transform='';r.classList.remove('swipe-ready');if(go)r.querySelector('.task-check')?.click();});
+/* החלקה בטלפון: ימינה = הושלם, שמאלה = העברה ליום אחר */
+(()=>{let row=null,wrap=null,x0=0,y0=0,dx=0,moving=false,raf=0;const T=90;
+  const reset=(act)=>{if(!row)return;const r=row,w=wrap,d=dx,was=moving;row=null;if(!was)return;r.style.transition='transform .25s cubic-bezier(.2,.8,.2,1)';r.style.transform='';setTimeout(()=>{r.style.willChange='';w.classList.remove('sw-done','sw-move','sw-ready');},260);if(!act)return;if(d>=T)r.querySelector('.task-check')?.click();else if(d<=-T)openMove(r.dataset.id);};
+  document.addEventListener('touchstart',e=>{const r=e.target.closest?.('.task-row');if(!r||fmtOn||e.touches.length!==1||e.target.closest('button,input,.chip'))return;row=r;wrap=r.parentElement;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;moving=false;},{passive:true});
+  document.addEventListener('touchmove',e=>{if(!row)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;if(!moving){if(Math.abs(my)>10&&Math.abs(my)>Math.abs(mx)){row=null;return;}if(Math.abs(mx)<8)return;moving=true;row.style.transition='none';row.style.willChange='transform';}dx=Math.max(-150,Math.min(150,mx));if(!raf)raf=requestAnimationFrame(()=>{raf=0;if(!row)return;row.style.transform=`translate3d(${dx}px,0,0)`;wrap.classList.toggle('sw-done',dx>0);wrap.classList.toggle('sw-move',dx<0);wrap.classList.toggle('sw-ready',Math.abs(dx)>=T);});},{passive:true});
+  document.addEventListener('touchend',()=>reset(true));
+  document.addEventListener('touchcancel',()=>reset(false));
 })();
 
 /* סרגל עיצוב משימות (מחשב בלבד): צבע, מרקר, גודל וכתב בולט, לכל משימה בנפרד */
@@ -321,15 +327,7 @@ document.addEventListener('click',e=>{const tab=e.target.closest('.tab');if(tab&
 
 /* מרכז הקשרים: קישורים חכמים, קבצים ואפליקציות */
 const pendingFiles=new Map(),MAX_FILE=15*1024*1024;
-const ATT_ICON={zoom:'video',meet:'video',teams:'video',youtube:'video',maps:'pin',waze:'nav',whatsapp:'chat',doc:'file',web:'link'};
-const APPS={
-  waze:{name:'Waze',icon:'nav',ph:'כתובת או יעד לניווט',need:true,make:a=>`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`},
-  maps:{name:'Google Maps',icon:'pin',ph:'כתובת או יעד',need:true,make:a=>`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`},
-  whatsapp:{name:'WhatsApp',icon:'chat',ph:'מספר עם קידומת מדינה (אפשר להשאיר ריק)',make:a=>`https://wa.me/${a.replace(/\D/g,'')}`},
-  phone:{name:'חיוג',icon:'phone',ph:'מספר טלפון',need:true,make:a=>`tel:${a.replace(/[^\d+]/g,'')}`},
-  mail:{name:'מייל',icon:'mail',ph:'כתובת מייל',need:true,make:a=>`mailto:${a.trim()}`},
-  custom:{name:'',icon:'app',ph:'קישור או Deep Link, למשל myapp://pay',need:true,custom:true,make:a=>a.trim()}
-};
+function attIcon(sub){return ({zoom:'video',meet:'video',teams:'video',youtube:'video',maps:'pin',waze:'nav',whatsapp:'chat',doc:'file',web:'link'})[sub];}
 function openDb(){return new Promise((res,rej)=>{const r=indexedDB.open('yomi-files',1);r.onupgradeneeded=()=>r.result.createObjectStore('files');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error);});}
 async function putFile(id,blob){const db=await openDb();return new Promise((res,rej)=>{const tx=db.transaction('files','readwrite');tx.objectStore('files').put(blob,id);tx.oncomplete=()=>res();tx.onerror=()=>rej(tx.error);});}
 async function getFile(id){const db=await openDb();return new Promise((res,rej)=>{const r=db.transaction('files').objectStore('files').get(id);r.onsuccess=()=>res(r.result||null);r.onerror=()=>rej(r.error);});}
@@ -353,7 +351,7 @@ function parseLink(raw){
   return {url:u.href,kind,title:title.slice(0,80),host};
 }
 function chipHtml(a,taskId,removable){
-  const sub=a.kind==='link'?a.sub:a.kind,icon=a.icon||ATT_ICON[a.sub]||'link',web=a.kind==='link'&&['web','youtube','doc'].includes(a.sub)&&a.host;
+  const sub=a.kind==='link'?a.sub:a.kind,icon=a.icon||attIcon(a.sub)||'link',web=a.kind==='link'&&['web','youtube','doc'].includes(a.sub)&&a.host;
   const fav=web?`<img src="https://www.google.com/s2/favicons?domain=${encodeURIComponent(a.host)}&sz=64" alt="" onload="this.previousElementSibling.style.display='none'" onerror="this.remove()">`:'';
   return `<button type="button" class="chip k-${sub}" data-attach="${a.id}" data-task="${taskId||''}" title="${escapeHtml(a.host||a.name||'')}"><svg class="ic"><use href="#i-${icon}"/></svg>${fav}<span>${escapeHtml(a.title||a.name||'')}</span>${removable?'<i class="chip-x" role="button" data-remove="'+a.id+'" aria-label="הסרה"></i>':''}</button>`;
 }
@@ -390,17 +388,57 @@ $('#attach-url').addEventListener('paste',()=>setTimeout(()=>{const v=$('#attach
 $('#attach-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUrlNow();}});
 $('#attach-add-link').addEventListener('click',addUrlNow);
 $('#attach-file').addEventListener('change',e=>{addFilesToDraft([...e.target.files]);e.target.value='';});
-/* אפליקציות */
-$('#attach-app-btn').addEventListener('click',()=>{const p=$('#app-picker');p.hidden=!p.hidden;});
-$('#app-picker').addEventListener('click',e=>{const b=e.target.closest('[data-app]');if(!b)return;appPick=b.dataset.app;const app=APPS[appPick];$$('#app-picker [data-app]').forEach(x=>x.classList.toggle('active',x===b));$('#app-name').hidden=!app.custom;$('#app-arg').placeholder=app.ph;$('#app-arg').focus();});
+/* אפליקציות: רשימה לחיפוש */
+const APP_CATALOG=[
+  {key:'waze',name:'Waze',icon:'nav',url:'waze://',arg:{ph:'יעד לניווט (אפשר להשאיר ריק)',make:a=>a?`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`:'waze://'}},
+  {key:'maps',name:'Google Maps',icon:'pin',url:'https://maps.google.com/',arg:{ph:'כתובת (אפשר להשאיר ריק)',make:a=>a?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`:'https://maps.google.com/'}},
+  {key:'whatsapp',name:'WhatsApp',icon:'chat',url:'https://wa.me/',arg:{ph:'מספר עם קידומת מדינה (אפשר להשאיר ריק)',make:a=>`https://wa.me/${a.replace(/\D/g,'')}`}},
+  {key:'phone',name:'חיוג',icon:'phone',arg:{need:true,ph:'מספר טלפון',make:a=>`tel:${a.replace(/[^\d+]/g,'')}`}},
+  {key:'sms',name:'הודעת SMS',icon:'chat',arg:{need:true,ph:'מספר טלפון',make:a=>`sms:${a.replace(/[^\d+]/g,'')}`}},
+  {key:'mail',name:'מייל',icon:'mail',arg:{need:true,ph:'כתובת מייל',make:a=>`mailto:${a.trim()}`}},
+  {key:'gmail',name:'Gmail',icon:'mail',url:'googlegmail://'},
+  {key:'telegram',name:'Telegram',icon:'chat',url:'tg://'},
+  {key:'instagram',name:'Instagram',icon:'app',url:'instagram://app'},
+  {key:'facebook',name:'Facebook',icon:'app',url:'fb://'},
+  {key:'x',name:'X (Twitter)',icon:'app',url:'twitter://'},
+  {key:'youtube',name:'YouTube',icon:'video',url:'youtube://'},
+  {key:'spotify',name:'Spotify',icon:'app',url:'spotify://'},
+  {key:'netflix',name:'Netflix',icon:'video',url:'nflx://'},
+  {key:'uber',name:'Uber',icon:'nav',url:'uber://'},
+  {key:'moovit',name:'Moovit',icon:'nav',url:'moovit://'},
+  {key:'zoom',name:'Zoom',icon:'video',url:'zoomus://'},
+  {key:'teams',name:'Microsoft Teams',icon:'video',url:'msteams://'},
+  {key:'meet',name:'Google Meet',icon:'video',url:'https://meet.google.com/'},
+  {key:'calendar',name:'Google Calendar',icon:'calendar',url:'https://calendar.google.com/'},
+  {key:'drive',name:'Google Drive',icon:'file',url:'https://drive.google.com/'},
+  {key:'notion',name:'Notion',icon:'file',url:'notion://'},
+  {key:'slack',name:'Slack',icon:'chat',url:'slack://'},
+  {key:'discord',name:'Discord',icon:'chat',url:'discord://'},
+  {key:'bit',name:'Bit',icon:'app',url:'https://www.bitpay.co.il/'},
+  {key:'paybox',name:'PayBox',icon:'app',url:'https://payboxapp.com/'},
+  {key:'hapoalim',name:'בנק הפועלים',icon:'app',url:'https://www.bankhapoalim.co.il/'},
+  {key:'leumi',name:'בנק לאומי',icon:'app',url:'https://www.leumi.co.il/'},
+  {key:'discount',name:'בנק דיסקונט',icon:'app',url:'https://www.discountbank.co.il/'},
+  {key:'mizrahi',name:'מזרחי-טפחות',icon:'app',url:'https://www.mizrahi-tefahot.co.il/'},
+  {key:'isracard',name:'ישראכרט',icon:'app',url:'https://www.isracard.co.il/'},
+  {key:'max',name:'MAX',icon:'app',url:'https://www.max.co.il/'},
+  {key:'cal',name:'כאל',icon:'app',url:'https://www.cal-online.co.il/'},
+  {key:'custom',name:'אחר: להזין קישור או Deep Link',icon:'app',custom:true}
+];
+function renderAppList(){const q=($('#app-search').value||'').trim().toLowerCase(),list=APP_CATALOG.filter(a=>!q||a.name.toLowerCase().includes(q)||a.key.includes(q));$('#app-list').innerHTML=list.length?list.map(a=>`<button type="button" class="app-item ${appPick&&appPick.key===a.key?'active':''}" data-app="${a.key}"><svg class="ic"><use href="#i-${a.icon}"/></svg><span>${escapeHtml(a.name)}</span></button>`).join(''):'<div class="empty-state">לא נמצאה אפליקציה. אפשר לבחור ״אחר״ ולהזין קישור.</div>';}
+function pushApp(app,url,title){draftAttach.push({id:crypto.randomUUID(),kind:'app',app:app.key,icon:app.icon,title:title.slice(0,60),url});renderDraftChips();$('#app-picker').hidden=true;$('#app-extra').hidden=true;$('#app-search').value='';appPick=null;}
+$('#attach-app-btn').addEventListener('click',()=>{const p=$('#app-picker');p.hidden=!p.hidden;if(!p.hidden){appPick=null;$('#app-extra').hidden=true;renderAppList();$('#app-search').focus();}});
+$('#app-search').addEventListener('input',renderAppList);
+$('#app-search').addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
+$('#app-list').addEventListener('click',e=>{const b=e.target.closest('[data-app]');if(!b)return;const a=APP_CATALOG.find(x=>x.key===b.dataset.app);if(!a)return;appPick=a;
+  if(a.arg||a.custom){$('#app-extra').hidden=false;$('#app-name').hidden=!a.custom;$('#app-arg').placeholder=a.custom?'קישור או Deep Link, למשל myapp://pay':a.arg.ph;$('#app-arg').value='';renderAppList();$('#app-arg').focus();}
+  else pushApp(a,a.url,a.name);});
 $('#app-arg').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#app-add').click();}});
 $('#app-add').addEventListener('click',()=>{
-  const app=APPS[appPick];if(!app){showToast('בחרי קודם אפליקציה');return;}
-  const arg=$('#app-arg').value.trim();if(app.need&&!arg){showToast('חסר ערך לשדה');return;}
-  let url=app.make(arg),title=app.custom?$('#app-name').value.trim():(arg?`${app.name}: ${arg}`:app.name);
-  if(app.custom){if(!title){showToast('נתנו שם לאפליקציה?');return;}if(!/^[a-z][a-z0-9+.-]*:/i.test(url)){const u=normUrl(url);if(!u){showToast('הקישור לא תקין');return;}url=u.href;}}
-  draftAttach.push({id:crypto.randomUUID(),kind:'app',app:appPick,icon:app.icon,title:title.slice(0,60),url});
-  renderDraftChips();$('#app-arg').value='';$('#app-name').value='';$('#app-picker').hidden=true;appPick=null;
+  const a=appPick;if(!a){showToast('בחרי קודם אפליקציה');return;}const arg=$('#app-arg').value.trim();
+  if(a.custom){const name=$('#app-name').value.trim();if(!name){showToast('חסר שם לאפליקציה');return;}let url=arg;if(!/^[a-z][a-z0-9+.-]*:/i.test(url)){const u=normUrl(url);if(!u){showToast('הקישור לא תקין');return;}url=u.href;}pushApp(a,url,name);$('#app-name').value='';return;}
+  if(a.arg.need&&!arg){showToast('חסר ערך לשדה');return;}
+  pushApp(a,a.arg.make(arg),arg?`${a.name}: ${arg}`:a.name);
 });
 /* גרירה והדבקה */
 const DROP='#task-dialog,.task-row';
@@ -419,3 +457,18 @@ document.addEventListener('paste',e=>{
   const txt=(e.clipboardData?.getData('text')||'').trim();if(parseLink(txt)){e.preventDefault();addLinkToDraft(txt);}
 });
 setTimeout(gcFiles,5000);setInterval(gcFiles,3600000);
+
+/* העברת משימה ליום אחר (החלקה שמאלה) + בחירת תאריך בחלון המשימה */
+$('#task-date-input').addEventListener('change',e=>{if(!e.target.value)return;const d=parseDate(e.target.value);if(!isNaN(d))dialogDate=d;});
+function openMove(id){const t=tasks.find(x=>x.id===id);if(!t)return;moveCtx={id};$('#move-title').textContent=t.title;const d=new Date(selectedDate);d.setDate(d.getDate()+1);$('#move-date').value=iso(d);$('#move-dialog').showModal();}
+function moveTaskTo(date){
+  const t=tasks.find(x=>x.id===moveCtx?.id);if(!t||isNaN(date))return;const target=iso(date),from=new Date(selectedDate);
+  if(t.type==='recurring'){t.skip={...(t.skip||{}),[iso(from)]:true};const copy={...t,id:crypto.randomUUID(),type:'dated',date:target,done:{},createdAt:Date.now()};delete copy.days;delete copy.skip;delete copy.fmtDays;delete copy.u;if(t.fmtDays&&t.fmtDays[from.getDay()])copy.fmt=t.fmtDays[from.getDay()];tasks.push(copy);}
+  else{t.type='dated';t.date=target;delete t.remindDate;}
+  $('#move-dialog').close();save();render();showToast('המשימה הועברה ל'+dateName(date));
+}
+document.addEventListener('click',e=>{
+  if(e.target.closest('.close-move')||e.target.id==='move-dialog'){$('#move-dialog').close();return;}
+  const q=e.target.closest('#move-dialog [data-days]');if(q){const d=new Date(selectedDate);d.setDate(d.getDate()+Number(q.dataset.days));moveTaskTo(d);return;}
+  if(e.target.closest('#move-go')){const v=$('#move-date').value;if(v)moveTaskTo(parseDate(v));}
+});

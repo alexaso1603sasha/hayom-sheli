@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="app-version" content="20" />
     <meta name="theme-color" content="#12233f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -47,6 +48,8 @@
 <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8z"/></symbol>
 <symbol id="i-phone" viewBox="0 0 24 24"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></symbol>
 <symbol id="i-mail" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 6L2 7"/></symbol>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
 </defs></svg>
 
     <main class="app-shell">
@@ -118,7 +121,7 @@
         <div id="type-switch" class="type-switch"><button type="button" data-type="dated" class="active">חד-פעמית</button><button type="button" data-type="recurring">קבועה</button></div>
         <div class="dialog-heading"><div><p class="eyebrow" id="dialog-kind"></p><h2 id="dialog-title">משימה חדשה</h2></div><button type="button" class="close-button close-dialog" aria-label="סגירה">×</button></div>
         <label>מה תרצי לעשות?<input id="task-title-input" name="title" required maxlength="80" placeholder="למשל: אימון פילאטיס" autocomplete="off" /></label>
-        <div class="form-grid"><label>התחלה <div class="time-picker"><div id="task-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="task-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="end-field">סיום <div class="time-picker"><div id="end-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="end-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="date-field">תאריך <output id="task-date-display" class="date-display"></output></label></div>
+        <div class="form-grid"><label>התחלה <div class="time-picker"><div id="task-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="task-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="end-field">סיום <div class="time-picker"><div id="end-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="end-minute-input" class="wheel" aria-label="דקות"></div></div></label><label class="date-field">תאריך <input type="date" id="task-date-input"></label></div>
         <label class="reminder-field">תזכורת <select id="reminder-input" name="reminder"><option value="none">ללא תזכורת</option><option value="0">בזמן המשימה</option><option value="5">5 דקות לפני</option><option value="15">15 דקות לפני</option><option value="30">30 דקות לפני</option><option value="60">שעה לפני</option><option value="day">יום לפני</option></select></label>
         <label id="remind-date-field" class="remind-date-field">תאריך התזכורת<input type="date" id="remind-date-input"></label>
         <div id="daybefore-field" class="daybefore-field"><span class="field-label">באיזו שעה ביום לפני?</span><div class="time-picker"><div id="rem-hour-input" class="wheel" aria-label="שעה"></div><span>:</span><div id="rem-minute-input" class="wheel" aria-label="דקות"></div></div></div>
@@ -131,17 +134,17 @@
           <div class="attach-row"><input id="attach-url" dir="ltr" placeholder="הדביקי קישור (Zoom, Maps, אתר...)" autocomplete="off" /><button type="button" id="attach-add-link" class="secondary-button attach-btn">הוספה</button></div>
           <div class="attach-row"><label class="attach-pill"><svg class="ic"><use href="#i-file"/></svg> קובץ<input type="file" id="attach-file" multiple hidden></label><button type="button" id="attach-app-btn" class="attach-pill"><svg class="ic"><use href="#i-app"/></svg> אפליקציה</button></div>
           <div id="app-picker" class="app-picker" hidden>
-            <div class="app-presets"><button type="button" data-app="waze">Waze</button><button type="button" data-app="maps">Google Maps</button><button type="button" data-app="whatsapp">WhatsApp</button><button type="button" data-app="phone">חיוג</button><button type="button" data-app="mail">מייל</button><button type="button" data-app="custom">אחר</button></div>
-            <input id="app-name" placeholder="שם האפליקציה" hidden />
-            <input id="app-arg" dir="auto" placeholder="בחרי אפליקציה" autocomplete="off" />
-            <button type="button" id="app-add" class="primary-button">הוספה</button>
+            <input id="app-search" type="search" placeholder="חיפוש אפליקציה" autocomplete="off" />
+            <div id="app-list" class="app-list"></div>
+            <div id="app-extra" class="app-extra" hidden><input id="app-name" placeholder="שם האפליקציה" hidden /><input id="app-arg" dir="auto" placeholder="" autocomplete="off" /><button type="button" id="app-add" class="primary-button">הוספה</button></div>
           </div>
-          <p class="attach-hint">אפשר גם לגרור קובץ לכאן או להדביק (Ctrl+V). קבצים נשמרים במכשיר הזה בלבד.</p>
+          <p class="attach-hint">אפשר גם לגרור קובץ לכאן או להדביק (Ctrl+V). קבצים נשמרים במכשיר הזה בלבד. אתר אינו יכול לקרוא את רשימת האפליקציות שמותקנות אצלך, ולכן יש כאן רשימה מוכנה לחיפוש, ו"אחר" לכל אפליקציה אחרת.</p>
         </div>
         <div class="dialog-actions"><button type="button" id="delete-from-dialog" class="delete-link" style="display:none">מחיקה</button><button type="button" class="secondary-button close-dialog">ביטול</button><button id="save-task" class="primary-button">שמירה</button></div>
       </form>
     </dialog>
     <dialog id="day-dialog" class="task-dialog day-dialog"><button type="button" class="close-button close-day" aria-label="סגירה">×</button><section class="card day-editor"><div class="card-title-row"><div><p class="eyebrow">עריכת היום</p><h3 id="calendar-day-title"></h3></div><button class="small-round add-task" data-type="dated" aria-label="משימה ליום הזה">＋</button></div><div id="calendar-day-tasks" class="task-list"></div></section></dialog>
+    <dialog id="move-dialog" class="task-dialog move-dialog"><div class="dialog-heading"><div><p class="eyebrow">העברת משימה ליום אחר</p><h2 id="move-title"></h2></div><button type="button" class="close-button close-move" aria-label="סגירה"></button></div><div class="move-options"><button type="button" data-days="1">מחר</button><button type="button" data-days="2">מחרתיים</button><button type="button" data-days="7">בעוד שבוע</button></div><label>או בחרי תאריך<input type="date" id="move-date"></label><button type="button" id="move-go" class="primary-button">העברה</button></dialog>
     <dialog id="delete-dialog" class="task-dialog delete-dialog"><h3>מחיקת משימה קבועה</h3><p id="delete-text" class="drawer-help"></p><div class="delete-actions"><button id="delete-all" class="primary-button" type="button">מחיקה בכל הימים</button><button id="delete-one" class="secondary-button" type="button"></button><button id="delete-cancel" class="text-button" type="button">ביטול</button></div></dialog>
     <div id="drawer-overlay" class="drawer-overlay"></div>
     <aside id="action-drawer" class="action-drawer" data-mode="menu" aria-label="סרגל פעולות">
