@@ -390,57 +390,37 @@ $('#attach-url').addEventListener('paste',()=>setTimeout(()=>{const v=$('#attach
 $('#attach-url').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();addUrlNow();}});
 $('#attach-add-link').addEventListener('click',addUrlNow);
 $('#attach-file').addEventListener('change',e=>{addFilesToDraft([...e.target.files]);e.target.value='';});
-/* אפליקציות: רשימה לחיפוש */
-const APP_CATALOG=[
-  {key:'waze',name:'Waze',icon:'nav',url:'waze://',arg:{ph:'יעד לניווט (אפשר להשאיר ריק)',make:a=>a?`https://waze.com/ul?q=${encodeURIComponent(a)}&navigate=yes`:'waze://'}},
-  {key:'maps',name:'Google Maps',icon:'pin',url:'https://maps.google.com/',arg:{ph:'כתובת (אפשר להשאיר ריק)',make:a=>a?`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(a)}`:'https://maps.google.com/'}},
-  {key:'whatsapp',name:'WhatsApp',icon:'chat',url:'https://wa.me/',arg:{ph:'מספר עם קידומת מדינה (אפשר להשאיר ריק)',make:a=>`https://wa.me/${a.replace(/\D/g,'')}`}},
-  {key:'phone',name:'חיוג',icon:'phone',arg:{need:true,ph:'מספר טלפון',make:a=>`tel:${a.replace(/[^\d+]/g,'')}`}},
-  {key:'sms',name:'הודעת SMS',icon:'chat',arg:{need:true,ph:'מספר טלפון',make:a=>`sms:${a.replace(/[^\d+]/g,'')}`}},
-  {key:'mail',name:'מייל',icon:'mail',arg:{need:true,ph:'כתובת מייל',make:a=>`mailto:${a.trim()}`}},
-  {key:'gmail',name:'Gmail',icon:'mail',url:'googlegmail://'},
-  {key:'telegram',name:'Telegram',icon:'chat',url:'tg://'},
-  {key:'instagram',name:'Instagram',icon:'app',url:'instagram://app'},
-  {key:'facebook',name:'Facebook',icon:'app',url:'fb://'},
-  {key:'x',name:'X (Twitter)',icon:'app',url:'twitter://'},
-  {key:'youtube',name:'YouTube',icon:'video',url:'youtube://'},
-  {key:'spotify',name:'Spotify',icon:'app',url:'spotify://'},
-  {key:'netflix',name:'Netflix',icon:'video',url:'nflx://'},
-  {key:'uber',name:'Uber',icon:'nav',url:'uber://'},
-  {key:'moovit',name:'Moovit',icon:'nav',url:'moovit://'},
-  {key:'zoom',name:'Zoom',icon:'video',url:'zoomus://'},
-  {key:'teams',name:'Microsoft Teams',icon:'video',url:'msteams://'},
-  {key:'meet',name:'Google Meet',icon:'video',url:'https://meet.google.com/'},
-  {key:'calendar',name:'Google Calendar',icon:'calendar',url:'https://calendar.google.com/'},
-  {key:'drive',name:'Google Drive',icon:'file',url:'https://drive.google.com/'},
-  {key:'notion',name:'Notion',icon:'file',url:'notion://'},
-  {key:'slack',name:'Slack',icon:'chat',url:'slack://'},
-  {key:'discord',name:'Discord',icon:'chat',url:'discord://'},
-  {key:'bit',name:'Bit',icon:'app',url:'https://www.bitpay.co.il/'},
-  {key:'paybox',name:'PayBox',icon:'app',url:'https://payboxapp.com/'},
-  {key:'hapoalim',name:'בנק הפועלים',icon:'app',url:'https://www.bankhapoalim.co.il/'},
-  {key:'leumi',name:'בנק לאומי',icon:'app',url:'https://www.leumi.co.il/'},
-  {key:'discount',name:'בנק דיסקונט',icon:'app',url:'https://www.discountbank.co.il/'},
-  {key:'mizrahi',name:'מזרחי-טפחות',icon:'app',url:'https://www.mizrahi-tefahot.co.il/'},
-  {key:'isracard',name:'ישראכרט',icon:'app',url:'https://www.isracard.co.il/'},
-  {key:'max',name:'MAX',icon:'app',url:'https://www.max.co.il/'},
-  {key:'cal',name:'כאל',icon:'app',url:'https://www.cal-online.co.il/'},
-  {key:'custom',name:'אחר: להזין קישור או Deep Link',icon:'app',custom:true}
-];
-function renderAppList(){const q=($('#app-search').value||'').trim().toLowerCase(),list=APP_CATALOG.filter(a=>!q||a.name.toLowerCase().includes(q)||a.key.includes(q));$('#app-list').innerHTML=list.length?list.map(a=>`<button type="button" class="app-item ${appPick&&appPick.key===a.key?'active':''}" data-app="${a.key}"><svg class="ic"><use href="#i-${a.icon}"/></svg><span>${escapeHtml(a.name)}</span></button>`).join(''):'<div class="empty-state">לא נמצאה אפליקציה. אפשר לבחור ״אחר״ ולהזין קישור.</div>';}
-function pushApp(app,url,title){draftAttach.push({id:crypto.randomUUID(),kind:'app',app:app.key,icon:app.icon,title:title.slice(0,60),url});renderDraftChips();$('#app-picker').hidden=true;$('#app-extra').hidden=true;$('#app-search').value='';appPick=null;}
-$('#attach-app-btn').addEventListener('click',()=>{const p=$('#app-picker');p.hidden=!p.hidden;if(!p.hidden){appPick=null;$('#app-extra').hidden=true;renderAppList();$('#app-search').focus();}});
+/* האפליקציות שלי: ספרייה אישית שנשמרת במכשיר הזה (אתר אינו יכול לקרוא את רשימת האפליקציות המותקנות) */
+let myApps=[];try{myApps=JSON.parse(localStorage.getItem('hayom-sheli-myapps')||'[]');}catch(e){}
+const saveMyApps=()=>localStorage.setItem('hayom-sheli-myapps',JSON.stringify(myApps));
+const APP_KINDS={
+  link:{ph:'קישור או Deep Link, למשל myapp://pay',help:'אפשר להעתיק קישור מתוך האפליקציה (שיתוף ואז העתקת קישור), או להזין כתובת מיוחדת של האפליקציה.',make:v=>{if(/^[a-z][a-z0-9+.-]*:/i.test(v))return v;const u=normUrl(v);return u?u.href:null;}},
+  ios:{ph:'שם הקיצור בדיוק',help:'ב-iPhone: באפליקציית ״קיצורי דרך״ יצרי קיצור עם הפעולה ״פתח אפליקציה״ ובחרי את האפליקציה. כתבי כאן את שם הקיצור.',make:v=>`shortcuts://run-shortcut?name=${encodeURIComponent(v)}`},
+  android:{ph:'שם חבילה, למשל com.waze',help:'שם החבילה מופיע בכתובת האפליקציה ב-Google Play, אחרי id=.',make:v=>/^[a-z][\w]*(\.[\w]+)+$/i.test(v)?`intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${v};end`:null}
+};
+function renderAppList(){
+  const q=($('#app-search').value||'').trim().toLowerCase(),list=myApps.filter(a=>!q||a.name.toLowerCase().includes(q));
+  $('#app-search').hidden=myApps.length<6;
+  $('#app-list').innerHTML=list.length?list.map(a=>`<div class="app-item"><button type="button" class="app-pick" data-app="${a.id}"><svg class="ic"><use href="#i-app"/></svg><span>${escapeHtml(a.name)}</span></button><i class="app-del" role="button" data-del-app="${a.id}" aria-label="הסרה מהרשימה"></i></div>`).join(''):`<div class="empty-state">${myApps.length?'לא נמצאה אפליקציה בשם הזה.':'עוד לא הוספת אפליקציות. הוסיפי כל אפליקציה שיש לך, פעם אחת, והיא תישמר כאן.'}</div>`;
+}
+function syncAppKind(){const k=APP_KINDS[$('#app-new-kind').value];$('#app-new-val').placeholder=k.ph;$('#app-new-help').textContent=k.help;}
+function pushApp(a){draftAttach.push({id:crypto.randomUUID(),kind:'app',icon:'app',title:a.name.slice(0,60),url:a.url});renderDraftChips();$('#app-picker').hidden=true;$('#app-new').hidden=true;}
+$('#attach-app-btn').addEventListener('click',()=>{const p=$('#app-picker');p.hidden=!p.hidden;if(!p.hidden){$('#app-new').hidden=true;renderAppList();}});
 $('#app-search').addEventListener('input',renderAppList);
 $('#app-search').addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
-$('#app-list').addEventListener('click',e=>{const b=e.target.closest('[data-app]');if(!b)return;const a=APP_CATALOG.find(x=>x.key===b.dataset.app);if(!a)return;appPick=a;
-  if(a.arg||a.custom){$('#app-extra').hidden=false;$('#app-name').hidden=!a.custom;$('#app-arg').placeholder=a.custom?'קישור או Deep Link, למשל myapp://pay':a.arg.ph;$('#app-arg').value='';renderAppList();$('#app-arg').focus();}
-  else pushApp(a,a.url,a.name);});
-$('#app-arg').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#app-add').click();}});
-$('#app-add').addEventListener('click',()=>{
-  const a=appPick;if(!a){showToast('בחרי קודם אפליקציה');return;}const arg=$('#app-arg').value.trim();
-  if(a.custom){const name=$('#app-name').value.trim();if(!name){showToast('חסר שם לאפליקציה');return;}let url=arg;if(!/^[a-z][a-z0-9+.-]*:/i.test(url)){const u=normUrl(url);if(!u){showToast('הקישור לא תקין');return;}url=u.href;}pushApp(a,url,name);$('#app-name').value='';return;}
-  if(a.arg.need&&!arg){showToast('חסר ערך לשדה');return;}
-  pushApp(a,a.arg.make(arg),arg?`${a.name}: ${arg}`:a.name);
+$('#app-new-btn').addEventListener('click',()=>{const box=$('#app-new');box.hidden=!box.hidden;if(!box.hidden){syncAppKind();$('#app-new-name').focus();}});
+$('#app-new-kind').addEventListener('change',syncAppKind);
+$('#app-list').addEventListener('click',e=>{
+  const del=e.target.closest('[data-del-app]');if(del){myApps=myApps.filter(a=>a.id!==del.dataset.delApp);saveMyApps();renderAppList();return;}
+  const b=e.target.closest('[data-app]');if(!b)return;const a=myApps.find(x=>x.id===b.dataset.app);if(a)pushApp(a);
+});
+$('#app-new-val').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#app-new-save').click();}});
+$('#app-new-save').addEventListener('click',()=>{
+  const name=$('#app-new-name').value.trim(),val=$('#app-new-val').value.trim();
+  if(!name){showToast('חסר שם לאפליקציה');return;}if(!val){showToast('חסר ערך בשדה');return;}
+  const url=APP_KINDS[$('#app-new-kind').value].make(val);if(!url){showToast('הערך לא תקין');return;}
+  const a={id:crypto.randomUUID(),name:name.slice(0,40),url};myApps.push(a);saveMyApps();
+  $('#app-new-name').value='';$('#app-new-val').value='';pushApp(a);
 });
 /* גרירה והדבקה */
 const DROP='#task-dialog,.task-row';
@@ -462,7 +442,9 @@ setTimeout(gcFiles,5000);setInterval(gcFiles,3600000);
 
 /* העברת משימה ליום אחר (החלקה שמאלה) + בחירת תאריך בחלון המשימה */
 $('#task-date-input').addEventListener('change',e=>{if(!e.target.value)return;const d=parseDate(e.target.value);if(!isNaN(d))dialogDate=d;});
-function openMove(id){const t=tasks.find(x=>x.id===id);if(!t)return;moveCtx={id};$('#move-title').textContent=t.title;const d=new Date(selectedDate);d.setDate(d.getDate()+1);$('#move-date').value=iso(d);$('#move-dialog').showModal();}
+let mvMonth=null;
+function renderMoveCal(){const y=mvMonth.getFullYear(),m=mvMonth.getMonth(),first=new Date(y,m,1).getDay(),n=new Date(y,m+1,0).getDate(),t=iso(today);$('#mv-month').textContent=`${months[m]} ${y}`;$('#mv-grid').innerHTML='<span></span>'.repeat(first)+Array.from({length:n},(_,i)=>{const d=new Date(y,m,i+1);return `<button type="button" class="mv-day ${iso(d)===t?'today':''}" data-date="${iso(d)}">${i+1}</button>`;}).join('');}
+function openMove(id){const t=tasks.find(x=>x.id===id);if(!t)return;moveCtx={id};$('#move-title').textContent=t.title;mvMonth=new Date(selectedDate.getFullYear(),selectedDate.getMonth(),1);renderMoveCal();$('#move-dialog').showModal();document.activeElement?.blur?.();}
 function moveTaskTo(date){
   const t=tasks.find(x=>x.id===moveCtx?.id);if(!t||isNaN(date))return;const target=iso(date),from=new Date(selectedDate);
   if(t.type==='recurring'){t.skip={...(t.skip||{}),[iso(from)]:true};const copy={...t,id:crypto.randomUUID(),type:'dated',date:target,done:{},createdAt:Date.now()};delete copy.days;delete copy.skip;delete copy.fmtDays;delete copy.u;if(t.fmtDays&&t.fmtDays[from.getDay()])copy.fmt=t.fmtDays[from.getDay()];tasks.push(copy);}
@@ -472,6 +454,8 @@ function moveTaskTo(date){
 document.addEventListener('click',e=>{
   if(e.target.closest('.close-move')||e.target.id==='move-dialog'){$('#move-dialog').close();return;}
   const q=e.target.closest('#move-dialog [data-days]');if(q){const d=new Date(selectedDate);d.setDate(d.getDate()+Number(q.dataset.days));moveTaskTo(d);return;}
-  if(e.target.closest('#move-go')){const v=$('#move-date').value;if(v)moveTaskTo(parseDate(v));}
+  const dayBtn=e.target.closest('.mv-day');if(dayBtn){moveTaskTo(parseDate(dayBtn.dataset.date));return;}
+  if(e.target.closest('#mv-prev')){mvMonth=new Date(mvMonth.getFullYear(),mvMonth.getMonth()-1,1);renderMoveCal();}
+  if(e.target.closest('#mv-next')){mvMonth=new Date(mvMonth.getFullYear(),mvMonth.getMonth()+1,1);renderMoveCal();}
 });
 function sigOf(o){const out={};for(const c of ['tasks','groups','lists','panels'])out[c]=(o[c]||[]).map(it=>[it.id,JSON.stringify(it)]).sort((a,b)=>a[0]<b[0]?-1:a[0]>b[0]?1:0);return JSON.stringify(out);}

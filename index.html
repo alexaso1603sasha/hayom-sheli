@@ -134,17 +134,25 @@
           <div class="attach-row"><input id="attach-url" dir="ltr" placeholder="הדביקי קישור (Zoom, Maps, אתר...)" autocomplete="off" /><button type="button" id="attach-add-link" class="secondary-button attach-btn">הוספה</button></div>
           <div class="attach-row"><label class="attach-pill"><svg class="ic"><use href="#i-file"/></svg> קובץ<input type="file" id="attach-file" multiple hidden></label><button type="button" id="attach-app-btn" class="attach-pill"><svg class="ic"><use href="#i-app"/></svg> אפליקציה</button></div>
           <div id="app-picker" class="app-picker" hidden>
-            <input id="app-search" type="search" placeholder="חיפוש אפליקציה" autocomplete="off" />
+            <p class="app-title">האפליקציות שלי</p>
+            <input id="app-search" type="search" placeholder="חיפוש באפליקציות שלי" autocomplete="off" hidden />
             <div id="app-list" class="app-list"></div>
-            <div id="app-extra" class="app-extra" hidden><input id="app-name" placeholder="שם האפליקציה" hidden /><input id="app-arg" dir="auto" placeholder="" autocomplete="off" /><button type="button" id="app-add" class="primary-button">הוספה</button></div>
+            <button type="button" id="app-new-btn" class="app-new-btn">+ הוספת אפליקציה שלי</button>
+            <div id="app-new" class="app-new" hidden>
+              <input id="app-new-name" placeholder="שם האפליקציה" autocomplete="off" />
+              <select id="app-new-kind"><option value="link">קישור או Deep Link</option><option value="ios">iPhone: קיצור דרך</option><option value="android">Android: שם חבילה</option></select>
+              <input id="app-new-val" dir="auto" placeholder="" autocomplete="off" />
+              <p id="app-new-help" class="attach-hint"></p>
+              <button type="button" id="app-new-save" class="primary-button">שמירה והוספה למשימה</button>
+            </div>
           </div>
-          <p class="attach-hint">אפשר גם לגרור קובץ לכאן או להדביק (Ctrl+V). קבצים נשמרים במכשיר הזה בלבד. אתר אינו יכול לקרוא את רשימת האפליקציות שמותקנות אצלך, ולכן יש כאן רשימה מוכנה לחיפוש, ו"אחר" לכל אפליקציה אחרת.</p>
+          <p class="attach-hint">אפשר גם לגרור קובץ לכאן או להדביק (Ctrl+V). קבצים נשמרים במכשיר הזה בלבד. רשימת "האפליקציות שלי" נשמרת בכל מכשיר בנפרד.</p>
         </div>
         <div class="dialog-actions"><button type="button" id="delete-from-dialog" class="delete-link" style="display:none">מחיקה</button><button type="button" class="secondary-button close-dialog">ביטול</button><button id="save-task" class="primary-button">שמירה</button></div>
       </form>
     </dialog>
     <dialog id="day-dialog" class="task-dialog day-dialog"><button type="button" class="close-button close-day" aria-label="סגירה">×</button><section class="card day-editor"><div class="card-title-row"><div><p class="eyebrow">עריכת היום</p><h3 id="calendar-day-title"></h3></div><button class="small-round add-task" data-type="dated" aria-label="משימה ליום הזה">＋</button></div><div id="calendar-day-tasks" class="task-list"></div></section></dialog>
-    <dialog id="move-dialog" class="task-dialog move-dialog"><div class="dialog-heading"><div><p class="eyebrow">העברת משימה ליום אחר</p><h2 id="move-title"></h2></div><button type="button" class="close-button close-move" aria-label="סגירה"></button></div><div class="move-options"><button type="button" data-days="1">מחר</button><button type="button" data-days="2">מחרתיים</button><button type="button" data-days="7">בעוד שבוע</button></div><label>או בחרי תאריך<input type="date" id="move-date"></label><button type="button" id="move-go" class="primary-button">העברה</button></dialog>
+    <dialog id="move-dialog" class="task-dialog move-dialog"><div class="mv-head"><strong id="move-title"></strong><button type="button" class="close-button close-move" aria-label="סגירה"></button></div><div class="move-options"><button type="button" data-days="1">מחר</button><button type="button" data-days="2">מחרתיים</button><button type="button" data-days="7">בעוד שבוע</button></div><div class="mv-cal"><div class="mv-nav"><button type="button" id="mv-prev" class="mv-nav-btn" aria-label="חודש קודם"><svg class="ic"><use href="#i-right"/></svg></button><b id="mv-month"></b><button type="button" id="mv-next" class="mv-nav-btn" aria-label="חודש הבא"><svg class="ic"><use href="#i-left"/></svg></button></div><div class="mv-week"><span>א׳</span><span>ב׳</span><span>ג׳</span><span>ד׳</span><span>ה׳</span><span>ו׳</span><span>ש׳</span></div><div id="mv-grid" class="mv-grid"></div></div></dialog>
     <dialog id="delete-dialog" class="task-dialog delete-dialog"><h3>מחיקת משימה קבועה</h3><p id="delete-text" class="drawer-help"></p><div class="delete-actions"><button id="delete-all" class="primary-button" type="button">מחיקה בכל הימים</button><button id="delete-one" class="secondary-button" type="button"></button><button id="delete-cancel" class="text-button" type="button">ביטול</button></div></dialog>
     <div id="drawer-overlay" class="drawer-overlay"></div>
     <aside id="action-drawer" class="action-drawer" data-mode="menu" aria-label="סרגל פעולות">
