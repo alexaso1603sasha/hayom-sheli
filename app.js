@@ -393,22 +393,25 @@ $('#attach-file').addEventListener('change',e=>{addFilesToDraft([...e.target.fil
 /* האפליקציות שלי: ספרייה אישית שנשמרת במכשיר הזה (אתר אינו יכול לקרוא את רשימת האפליקציות המותקנות) */
 let myApps=[];try{myApps=JSON.parse(localStorage.getItem('hayom-sheli-myapps')||'[]');}catch(e){}
 const saveMyApps=()=>localStorage.setItem('hayom-sheli-myapps',JSON.stringify(myApps));
+const STORE_RE=/apps\.apple\.com|itunes\.apple\.com/i,PLAY_RE=/play\.google\.com\/store|^market:/i;
 const APP_KINDS={
-  link:{ph:'קישור או Deep Link, למשל myapp://pay',help:'אפשר להעתיק קישור מתוך האפליקציה (שיתוף ואז העתקת קישור), או להזין כתובת מיוחדת של האפליקציה.',make:v=>{if(/^[a-z][a-z0-9+.-]*:/i.test(v))return v;const u=normUrl(v);return u?u.href:null;}},
-  ios:{ph:'שם הקיצור בדיוק',help:'ב-iPhone: באפליקציית ״קיצורי דרך״ יצרי קיצור עם הפעולה ״פתח אפליקציה״ ובחרי את האפליקציה. כתבי כאן את שם הקיצור.',make:v=>`shortcuts://run-shortcut?name=${encodeURIComponent(v)}`},
-  android:{ph:'שם חבילה, למשל com.waze',help:'שם החבילה מופיע בכתובת האפליקציה ב-Google Play, אחרי id=.',make:v=>/^[a-z][\w]*(\.[\w]+)+$/i.test(v)?`intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${v};end`:null}
+  ios:{ph:'שם הקיצור שיצרת, בדיוק',help:'הדרך שעובדת לכל אפליקציה ב-iPhone ובמק: 1) לוחצים על ״יצירת קיצור דרך חדש״. 2) מוסיפים את הפעולה ״פתח אפליקציה״ (Open App) ובוחרים את האפליקציה. 3) נותנים לקיצור שם וכותבים אותו כאן. בפעם הראשונה המכשיר עשוי לבקש אישור.',make:v=>`shortcuts://run-shortcut?name=${encodeURIComponent(v)}`},
+  android:{ph:'שם חבילה או קישור Google Play',help:'מדביקים קישור של האפליקציה מ-Google Play (שם החבילה יוצא ממנו אוטומטית), או שם חבילה כמו com.waze. לחיצה על הצ׳יפ תפתח את האפליקציה המותקנת.',make:v=>{const m=v.match(/[?&]id=([\w.]+)/)||(/^[a-z][\w]*(\.[\w]+)+$/i.test(v)?[0,v]:null);return m?`intent:#Intent;action=android.intent.action.MAIN;category=android.intent.category.LAUNCHER;package=${m[1]};end`:null;}},
+  link:{ph:'myapp://...',help:'למתקדמים: כתובת פתיחה (Deep Link) שהאפליקציה מגדירה. רוב האפליקציות לא מספקות כזו, וקישור שמוביל לחנות אינו מתאים.',make:v=>{if(PLAY_RE.test(v))return APP_KINDS.android.make(v);if(/^[a-z][a-z0-9+.-]*:/i.test(v))return v;const u=normUrl(v);return u?u.href:null;}}
 };
+function defaultAppKind(){const ua=navigator.userAgent||'';return /Android/i.test(ua)?'android':/iPhone|iPad|iPod|Macintosh/i.test(ua)?'ios':'link';}
 function renderAppList(){
   const q=($('#app-search').value||'').trim().toLowerCase(),list=myApps.filter(a=>!q||a.name.toLowerCase().includes(q));
   $('#app-search').hidden=myApps.length<6;
   $('#app-list').innerHTML=list.length?list.map(a=>`<div class="app-item"><button type="button" class="app-pick" data-app="${a.id}"><svg class="ic"><use href="#i-app"/></svg><span>${escapeHtml(a.name)}</span></button><i class="app-del" role="button" data-del-app="${a.id}" aria-label="הסרה מהרשימה"></i></div>`).join(''):`<div class="empty-state">${myApps.length?'לא נמצאה אפליקציה בשם הזה.':'עוד לא הוספת אפליקציות. הוסיפי כל אפליקציה שיש לך, פעם אחת, והיא תישמר כאן.'}</div>`;
 }
-function syncAppKind(){const k=APP_KINDS[$('#app-new-kind').value];$('#app-new-val').placeholder=k.ph;$('#app-new-help').textContent=k.help;}
+function syncAppKind(){const v=$('#app-new-kind').value,k=APP_KINDS[v];$('#app-new-val').placeholder=k.ph;$('#app-new-help').textContent=k.help;$('#app-shortcut-btn').hidden=v!=='ios';}
+$('#app-shortcut-btn').addEventListener('click',()=>{location.href='shortcuts://create-shortcut';});
 function pushApp(a){draftAttach.push({id:crypto.randomUUID(),kind:'app',icon:'app',title:a.name.slice(0,60),url:a.url});renderDraftChips();$('#app-picker').hidden=true;$('#app-new').hidden=true;}
 $('#attach-app-btn').addEventListener('click',()=>{const p=$('#app-picker');p.hidden=!p.hidden;if(!p.hidden){$('#app-new').hidden=true;renderAppList();}});
 $('#app-search').addEventListener('input',renderAppList);
 $('#app-search').addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault();});
-$('#app-new-btn').addEventListener('click',()=>{const box=$('#app-new');box.hidden=!box.hidden;if(!box.hidden){syncAppKind();$('#app-new-name').focus();}});
+$('#app-new-btn').addEventListener('click',()=>{const box=$('#app-new');box.hidden=!box.hidden;if(!box.hidden){$('#app-new-kind').value=defaultAppKind();syncAppKind();$('#app-new-name').focus();}});
 $('#app-new-kind').addEventListener('change',syncAppKind);
 $('#app-list').addEventListener('click',e=>{
   const del=e.target.closest('[data-del-app]');if(del){myApps=myApps.filter(a=>a.id!==del.dataset.delApp);saveMyApps();renderAppList();return;}
@@ -418,6 +421,7 @@ $('#app-new-val').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDe
 $('#app-new-save').addEventListener('click',()=>{
   const name=$('#app-new-name').value.trim(),val=$('#app-new-val').value.trim();
   if(!name){showToast('חסר שם לאפליקציה');return;}if(!val){showToast('חסר ערך בשדה');return;}
+  if(STORE_RE.test(val)){showToast('זה קישור לחנות ולא לפתיחת האפליקציה. ב-iPhone השתמשי בקיצור דרך.');return;}
   const url=APP_KINDS[$('#app-new-kind').value].make(val);if(!url){showToast('הערך לא תקין');return;}
   const a={id:crypto.randomUUID(),name:name.slice(0,40),url};myApps.push(a);saveMyApps();
   $('#app-new-name').value='';$('#app-new-val').value='';pushApp(a);
